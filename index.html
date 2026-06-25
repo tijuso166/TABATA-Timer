@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Tabata Timer</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Tabata">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="theme-color" content="#000000">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ===== TIMER SCREEN ===== */
+        .screen {
+            width: 100%;
+            max-width: 430px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 52px 28px 44px;
+            padding-top: calc(52px + env(safe-area-inset-top));
+            padding-bottom: calc(44px + env(safe-area-inset-bottom));
+        }
+
+        /* Phase header */
+        .phase-header {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .phase-name {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            color: #fff;
+        }
+
+        .settings-btn {
+            position: absolute;
+            right: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1.5px solid #3a3a3a;
+            background: transparent;
+            color: #888;
+            font-size: 17px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .settings-btn:active { opacity: 0.5; }
+
+        /* Stats row */
+        .stats-row {
+            display: flex;
+            width: 100%;
+            justify-content: space-around;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        /* Ring container */
+        .ring-container {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .ring-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .timer-center {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .countdown-number {
+            font-size: 72px;
+            font-weight: 800;
+            line-height: 1;
+            color: #fff;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .total-time-display {
+            font-size: 16px;
+            font-weight: 500;
+            color: #444;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 28px;
+        }
+
+        .btn {
+            border-radius: 50%;
+            border: 2px solid #fff;
+            background: transparent;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.1s;
+        }
+        .btn:active { opacity: 0.5; }
+
+        .btn-stop, .btn-skip {
+            width: 62px;
+            height: 62px;
+            font-size: 22px;
+        }
+
+        .btn-pause {
+            width: 74px;
+            height: 74px;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        /* ===== SETTINGS OVERLAY ===== */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 50;
+            flex-direction: column;
+            padding: 52px 28px 44px;
+            padding-top: calc(52px + env(safe-area-inset-top));
+            padding-bottom: calc(44px + env(safe-area-inset-bottom));
+        }
+        .overlay.active { display: flex; }
+
+        .overlay-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+        }
+
+        .overlay-title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1.5px solid #3a3a3a;
+            background: transparent;
+            color: #888;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .close-btn:active { opacity: 0.5; }
+
+        .settings-list { flex: 1; overflow-y: auto; }
+
+        .stepper-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid #1c1c1c;
+        }
+        .stepper-row:first-child { border-top: 1px solid #1c1c1c; }
+
+        .stepper-label {
+            font-size: 16px;
+            color: #ccc;
+        }
+
+        .stepper-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stepper-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1.5px solid #3a3a3a;
+            background: transparent;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .stepper-btn:active { opacity: 0.5; }
+
+        .stepper-value {
+            font-size: 17px;
+            font-weight: 600;
+            min-width: 54px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .save-btn {
+            margin-top: 28px;
+            width: 100%;
+            padding: 18px;
+            border-radius: 14px;
+            border: 2px solid #fff;
+            background: transparent;
+            color: #fff;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .save-btn:active { opacity: 0.5; }
+
+        /* ===== FINISH SCREEN ===== */
+        .finish-screen {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 40px 28px;
+            text-align: center;
+        }
+        .finish-screen.active { display: flex; }
+
+        .finish-check {
+            font-size: 88px;
+            line-height: 1;
+            color: #22c55e;
+        }
+
+        .finish-title {
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .finish-stats {
+            font-size: 16px;
+            color: #555;
+            line-height: 2;
+        }
+
+        .restart-btn {
+            margin-top: 16px;
+            padding: 18px 52px;
+            border-radius: 14px;
+            border: 2px solid #fff;
+            background: transparent;
+            color: #fff;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .restart-btn:active { opacity: 0.5; }
+    </style>
+</head>
+<body>
+
+<!-- ===== TIMER SCREEN ===== -->
+<div class="screen" id="timerScreen">
+    <div class="phase-header">
+        <div class="phase-name" id="phaseName">Warm-up</div>
+        <button class="settings-btn" id="settingsBtn" aria-label="Einstellungen">⚙</button>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-item">
+            <div class="stat-value" id="setsValue">—</div>
+            <div class="stat-label">Sets</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="cyclesValue">—</div>
+            <div class="stat-label">Cycles</div>
+        </div>
+    </div>
+
+    <div class="ring-container">
+        <svg class="ring-svg" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="outerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" id="outerGradA" stop-color="#22c55e"/>
+                    <stop offset="100%" id="outerGradB" stop-color="#06b6d4"/>
+                </linearGradient>
+                <linearGradient id="innerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" id="innerGradA" stop-color="#22c55e"/>
+                    <stop offset="100%" id="innerGradB" stop-color="#06b6d4"/>
+                </linearGradient>
+            </defs>
+            <!-- Outer track -->
+            <circle cx="130" cy="130" r="118" fill="none" stroke="#1a1a1a" stroke-width="14"/>
+            <!-- Outer ring: next phase, always full -->
+            <circle id="outerRing" cx="130" cy="130" r="118" fill="none"
+                    stroke="url(#outerGrad)" stroke-width="14" stroke-linecap="round"
+                    transform="rotate(-90 130 130)"
+                    stroke-dasharray="741.42" stroke-dashoffset="0"/>
+            <!-- Inner track -->
+            <circle cx="130" cy="130" r="96" fill="none" stroke="#1a1a1a" stroke-width="14"/>
+            <!-- Inner ring: current phase, fills over time -->
+            <circle id="innerRing" cx="130" cy="130" r="96" fill="none"
+                    stroke="url(#innerGrad)" stroke-width="14" stroke-linecap="round"
+                    transform="rotate(-90 130 130)"
+                    stroke-dasharray="603.19" stroke-dashoffset="603.19"/>
+        </svg>
+        <div class="timer-center">
+            <div class="countdown-number" id="countdownNum">60</div>
+            <div class="total-time-display" id="totalTimeDisplay">00:00</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-stop" id="stopBtn" aria-label="Stop">⏹</button>
+        <button class="btn btn-pause" id="pauseBtn">Start</button>
+        <button class="btn btn-skip" id="skipBtn" aria-label="Überspringen">⏭</button>
+    </div>
+</div>
+
+<!-- ===== SETTINGS OVERLAY ===== -->
+<div class="overlay" id="settingsOverlay">
+    <div class="overlay-header">
+        <div class="overlay-title">Einstellungen</div>
+        <button class="close-btn" id="closeBtn" aria-label="Schließen">✕</button>
+    </div>
+    <div class="settings-list" id="settingsList"></div>
+    <button class="save-btn" id="saveBtn">Speichern &amp; starten</button>
+</div>
+
+<!-- ===== FINISH SCREEN ===== -->
+<div class="finish-screen" id="finishScreen">
+    <div class="finish-check">✓</div>
+    <div class="finish-title">Workout abgeschlossen!</div>
+    <div class="finish-stats" id="finishStats"></div>
+    <button class="restart-btn" id="restartBtn">Nochmal</button>
+</div>
+
+<script>
+// ==================== CONSTANTS ====================
+const INNER_R    = 96;
+const OUTER_R    = 118;
+const INNER_CIRC = 2 * Math.PI * INNER_R;   // ~603.19
+const OUTER_CIRC = 2 * Math.PI * OUTER_R;   // ~741.42
+
+const COLORS = {
+    warmup:   ['#22c55e', '#06b6d4'],
+    exercise: ['#ff6b35', '#e8001e'],
+    pause:    ['#22c55e', '#06b6d4'],
+    cooldown: ['#3b82f6', '#06b6d4'],
+    done:     ['#2a2a2a', '#2a2a2a'],
+};
+
+const PHASE_LABEL = {
+    warmup:   'Warm-up',
+    exercise: 'Übung',
+    pause:    'Pause',
+    cooldown: 'Cooldown',
+};
+
+// ==================== SETTINGS ====================
+const DEFAULTS = {
+    exerciseTime: 40,
+    pauseTime:    20,
+    warmupTime:   60,
+    cooldownTime: 30,
+    setsPerCycle: 6,
+    cycles:       3,
+};
+
+const SETTINGS_CONFIG = [
+    { key: 'exerciseTime',  label: 'Exercise-Zeit',       unit: 's', step: 5, min: 5 },
+    { key: 'pauseTime',     label: 'Pausen-Zeit',         unit: 's', step: 5, min: 5 },
+    { key: 'warmupTime',    label: 'Warm-up',             unit: 's', step: 5, min: 5 },
+    { key: 'cooldownTime',  label: 'Cooldown',            unit: 's', step: 5, min: 5 },
+    { key: 'setsPerCycle',  label: 'Übungen pro Zyklus',  unit: '',  step: 1, min: 1 },
+    { key: 'cycles',        label: 'Zyklen',              unit: '',  step: 1, min: 1 },
+];
+
+let settings = { ...DEFAULTS };
+let tempSettings = { ...DEFAULTS };
+
+// ==================== STATE ====================
+let phaseSeq   = [];   // [{type, duration, set, cycle}]
+let phaseIdx   = 0;
+let timeLeft   = 0;
+let running    = false;
+let started    = false; // has the timer ever been started this session?
+let intervalId = null;
+
+// ==================== AUDIO ====================
+let audioCtx = null;
+
+function audio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+}
+
+function tone(freq, when, dur, vol = 0.3) {
+    const ctx = audio();
+    const osc = ctx.createOscillator();
+    const g   = ctx.createGain();
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, when);
+    g.gain.linearRampToValueAtTime(vol, when + 0.01);
+    g.gain.linearRampToValueAtTime(0, when + dur);
+    osc.start(when);
+    osc.stop(when + dur + 0.02);
+}
+
+function sweep(f0, f1, when, dur, vol = 0.25) {
+    const ctx = audio();
+    const osc = ctx.createOscillator();
+    const g   = ctx.createGain();
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(f0, when);
+    osc.frequency.linearRampToValueAtTime(f1, when + dur);
+    g.gain.setValueAtTime(0, when);
+    g.gain.linearRampToValueAtTime(vol, when + 0.01);
+    g.gain.linearRampToValueAtTime(0, when + dur);
+    osc.start(when);
+    osc.stop(when + dur + 0.02);
+}
+
+function beep() {
+    tone(880, audio().currentTime, 0.08, 0.28);
+}
+
+function phaseSound(type) {
+    const t = audio().currentTime;
+    switch (type) {
+        case 'warmup':
+            sweep(440, 660, t, 0.4);
+            break;
+        case 'exercise':
+            tone(1047, t, 0.15, 0.35);
+            tone(1319, t + 0.17, 0.15, 0.35);
+            break;
+        case 'pause':
+            sweep(659, 523, t, 0.3, 0.3);
+            break;
+        case 'cooldown':
+            sweep(660, 440, t, 0.4);
+            break;
+        case 'done':
+            [523, 659, 784, 1047].forEach((f, i) => tone(f, t + i * 0.16, 0.15, 0.35));
+            break;
+    }
+}
+
+// ==================== SEQUENCE ====================
+function buildSeq(s) {
+    const seq = [];
+    seq.push({ type: 'warmup', duration: s.warmupTime, set: null, cycle: null });
+    for (let c = 1; c <= s.cycles; c++) {
+        for (let set = 1; set <= s.setsPerCycle; set++) {
+            seq.push({ type: 'exercise', duration: s.exerciseTime, set, cycle: c });
+            seq.push({ type: 'pause',    duration: s.pauseTime,    set, cycle: c });
+        }
+    }
+    seq.push({ type: 'cooldown', duration: s.cooldownTime, set: null, cycle: null });
+    return seq;
+}
+
+function remainingTime() {
+    if (phaseIdx >= phaseSeq.length) return 0;
+    return timeLeft + phaseSeq.slice(phaseIdx + 1).reduce((s, p) => s + p.duration, 0);
+}
+
+// ==================== TIMER ====================
+function initTimer() {
+    clearInterval(intervalId);
+    phaseSeq  = buildSeq(settings);
+    phaseIdx  = 0;
+    timeLeft  = phaseSeq[0].duration;
+    running   = false;
+    started   = false;
+    updateUI();
+}
+
+function startTimer() {
+    if (running) return;
+    const ctx = audio();
+    if (ctx.state === 'suspended') ctx.resume();
+    if (!started) {
+        started = true;
+        phaseSound(phaseSeq[phaseIdx].type);
+    }
+    running = true;
+    intervalId = setInterval(tick, 1000);
+    updateUI();
+}
+
+function pauseTimer() {
+    if (!running) return;
+    running = false;
+    clearInterval(intervalId);
+    updateUI();
+}
+
+function stopTimer() {
+    initTimer();
+}
+
+function skipPhase() {
+    const ctx = audio();
+    if (ctx.state === 'suspended') ctx.resume();
+    advance();
+}
+
+function tick() {
+    timeLeft--;
+    if (timeLeft <= 3 && timeLeft > 0) beep();
+    if (timeLeft <= 0) {
+        advance();
+    } else {
+        updateUI();
+    }
+}
+
+function advance() {
+    phaseIdx++;
+    if (phaseIdx >= phaseSeq.length) {
+        running = false;
+        clearInterval(intervalId);
+        phaseSound('done');
+        showFinish();
+        return;
+    }
+    timeLeft = phaseSeq[phaseIdx].duration;
+    phaseSound(phaseSeq[phaseIdx].type);
+    updateUI();
+}
+
+// ==================== UI ====================
+function fmt(s) {
+    const m = String(Math.floor(s / 60)).padStart(2, '0');
+    const sec = String(s % 60).padStart(2, '0');
+    return `${m}:${sec}`;
+}
+
+function updateUI() {
+    if (phaseIdx >= phaseSeq.length) return;
+    const phase = phaseSeq[phaseIdx];
+    const next  = phaseSeq[phaseIdx + 1] || { type: 'done' };
+
+    // Header
+    document.getElementById('phaseName').textContent = PHASE_LABEL[phase.type];
+
+    // Stats
+    const inWorkout = phase.type === 'exercise' || phase.type === 'pause';
+    document.getElementById('setsValue').textContent =
+        inWorkout ? `${phase.set}/${settings.setsPerCycle}` : '—';
+    document.getElementById('cyclesValue').textContent =
+        inWorkout
+            ? `${phase.cycle}/${settings.cycles}`
+            : (phase.type === 'warmup' ? `1/${settings.cycles}` : `${settings.cycles}/${settings.cycles}`);
+
+    // Numbers
+    document.getElementById('countdownNum').textContent = timeLeft;
+    document.getElementById('totalTimeDisplay').textContent = fmt(remainingTime());
+
+    // Inner ring (current phase progress, fills clockwise)
+    const progress = (phase.duration - timeLeft) / phase.duration;
+    const innerOffset = INNER_CIRC * (1 - progress);
+    document.getElementById('innerRing').setAttribute('stroke-dashoffset', innerOffset.toFixed(2));
+
+    // Colors
+    const [cA, cB] = COLORS[phase.type];
+    const [nA, nB] = COLORS[next.type];
+    document.getElementById('innerGradA').setAttribute('stop-color', cA);
+    document.getElementById('innerGradB').setAttribute('stop-color', cB);
+    document.getElementById('outerGradA').setAttribute('stop-color', nA);
+    document.getElementById('outerGradB').setAttribute('stop-color', nB);
+
+    // Pause/Start button
+    document.getElementById('pauseBtn').textContent = running ? 'Pause' : 'Start';
+}
+
+// ==================== SETTINGS UI ====================
+function buildSettingsUI() {
+    tempSettings = { ...settings };
+    const list = document.getElementById('settingsList');
+    list.innerHTML = '';
+    SETTINGS_CONFIG.forEach(cfg => {
+        const row = document.createElement('div');
+        row.className = 'stepper-row';
+
+        const lbl = document.createElement('div');
+        lbl.className = 'stepper-label';
+        lbl.textContent = cfg.label;
+
+        const ctrl = document.createElement('div');
+        ctrl.className = 'stepper-controls';
+
+        const minus = document.createElement('button');
+        minus.className = 'stepper-btn';
+        minus.textContent = '−';
+        minus.setAttribute('aria-label', 'Verringern');
+
+        const val = document.createElement('div');
+        val.className = 'stepper-value';
+        val.id = `sv-${cfg.key}`;
+        val.textContent = tempSettings[cfg.key] + cfg.unit;
+
+        const plus = document.createElement('button');
+        plus.className = 'stepper-btn';
+        plus.textContent = '+';
+        plus.setAttribute('aria-label', 'Erhöhen');
+
+        minus.addEventListener('click', () => {
+            if (tempSettings[cfg.key] - cfg.step >= cfg.min) {
+                tempSettings[cfg.key] -= cfg.step;
+                val.textContent = tempSettings[cfg.key] + cfg.unit;
+            }
+        });
+        plus.addEventListener('click', () => {
+            tempSettings[cfg.key] += cfg.step;
+            val.textContent = tempSettings[cfg.key] + cfg.unit;
+        });
+
+        ctrl.append(minus, val, plus);
+        row.append(lbl, ctrl);
+        list.appendChild(row);
+    });
+}
+
+function openSettings() {
+    pauseTimer();
+    buildSettingsUI();
+    document.getElementById('settingsOverlay').classList.add('active');
+}
+
+function closeSettings() {
+    document.getElementById('settingsOverlay').classList.remove('active');
+}
+
+function saveAndStart() {
+    settings = { ...tempSettings };
+    closeSettings();
+    initTimer();
+    startTimer();
+}
+
+// ==================== FINISH SCREEN ====================
+function showFinish() {
+    const totalSets = settings.setsPerCycle * settings.cycles;
+    const totalSec  = buildSeq(settings).reduce((s, p) => s + p.duration, 0);
+    document.getElementById('finishStats').innerHTML =
+        `Gesamtzeit: ${fmt(totalSec)}<br>${totalSets} Sets &middot; ${settings.cycles} Zyklen`;
+    document.getElementById('finishScreen').classList.add('active');
+}
+
+function hideFinish() {
+    document.getElementById('finishScreen').classList.remove('active');
+}
+
+// ==================== EVENT LISTENERS ====================
+document.getElementById('settingsBtn').addEventListener('click', openSettings);
+document.getElementById('closeBtn').addEventListener('click', closeSettings);
+document.getElementById('saveBtn').addEventListener('click', saveAndStart);
+
+document.getElementById('pauseBtn').addEventListener('click', () => {
+    if (running) pauseTimer(); else startTimer();
+});
+document.getElementById('stopBtn').addEventListener('click', stopTimer);
+document.getElementById('skipBtn').addEventListener('click', skipPhase);
+document.getElementById('restartBtn').addEventListener('click', () => {
+    hideFinish();
+    initTimer();
+    startTimer();
+});
+
+// Prevent double-tap zoom on buttons
+document.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('touchend', e => e.preventDefault());
+});
+
+// ==================== SERVICE WORKER ====================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+}
+
+// ==================== BOOT ====================
+initTimer();
+</script>
+</body>
+</html>
