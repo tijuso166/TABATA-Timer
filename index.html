@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <title>Tabata Timer</title>
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -26,6 +26,7 @@
             -webkit-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         /* ===== TIMER SCREEN ===== */
@@ -61,19 +62,20 @@
         .settings-btn {
             position: absolute;
             right: 0;
-            width: 36px;
-            height: 36px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             border: 1.5px solid #3a3a3a;
             background: transparent;
             color: #888;
-            font-size: 17px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            touch-action: manipulation;
         }
         .settings-btn:active { opacity: 0.5; }
+        .settings-btn svg { width: 19px; height: 19px; }
 
         /* Stats row */
         .stats-row {
@@ -112,6 +114,7 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            touch-action: manipulation;
         }
 
         .ring-svg {
@@ -164,21 +167,27 @@
             align-items: center;
             justify-content: center;
             transition: opacity 0.1s;
+            touch-action: manipulation;
+            padding: 0;
         }
         .btn:active { opacity: 0.5; }
 
         .btn-stop, .btn-skip {
-            width: 62px;
-            height: 62px;
-            font-size: 22px;
+            width: 56px;
+            height: 56px;
+        }
+        .btn-stop svg, .btn-skip svg {
+            width: 22px;
+            height: 22px;
         }
 
         .btn-pause {
-            width: 74px;
-            height: 74px;
-            font-size: 15px;
-            font-weight: 700;
-            letter-spacing: 0.2px;
+            width: 92px;
+            height: 92px;
+        }
+        .btn-pause svg {
+            width: 34px;
+            height: 34px;
         }
 
         /* ===== SETTINGS OVERLAY ===== */
@@ -208,8 +217,8 @@
         }
 
         .close-btn {
-            width: 36px;
-            height: 36px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             border: 1.5px solid #3a3a3a;
             background: transparent;
@@ -219,6 +228,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            touch-action: manipulation;
         }
         .close-btn:active { opacity: 0.5; }
 
@@ -245,8 +255,8 @@
         }
 
         .stepper-btn {
-            width: 34px;
-            height: 34px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             border: 1.5px solid #3a3a3a;
             background: transparent;
@@ -257,6 +267,7 @@
             align-items: center;
             justify-content: center;
             line-height: 1;
+            touch-action: manipulation;
         }
         .stepper-btn:active { opacity: 0.5; }
 
@@ -280,6 +291,7 @@
             font-weight: 700;
             cursor: pointer;
             flex-shrink: 0;
+            touch-action: manipulation;
         }
         .save-btn:active { opacity: 0.5; }
 
@@ -326,6 +338,7 @@
             font-size: 17px;
             font-weight: 700;
             cursor: pointer;
+            touch-action: manipulation;
         }
         .restart-btn:active { opacity: 0.5; }
     </style>
@@ -336,7 +349,12 @@
 <div class="screen" id="timerScreen">
     <div class="phase-header">
         <div class="phase-name" id="phaseName">Warm-up</div>
-        <button class="settings-btn" id="settingsBtn" aria-label="Einstellungen">⚙</button>
+        <button class="settings-btn" id="settingsBtn" aria-label="Einstellungen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+        </button>
     </div>
 
     <div class="stats-row">
@@ -384,9 +402,13 @@
     </div>
 
     <div class="controls">
-        <button class="btn btn-stop" id="stopBtn" aria-label="Stop">⏹</button>
-        <button class="btn btn-pause" id="pauseBtn">Start</button>
-        <button class="btn btn-skip" id="skipBtn" aria-label="Überspringen">⏭</button>
+        <button class="btn btn-stop" id="stopBtn" aria-label="Stop">
+            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"></rect></svg>
+        </button>
+        <button class="btn btn-pause" id="pauseBtn" aria-label="Start"></button>
+        <button class="btn btn-skip" id="skipBtn" aria-label="Überspringen">
+            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="4,4 13,12 4,20"></polygon><polygon points="12,4 21,12 12,20"></polygon></svg>
+        </button>
     </div>
 </div>
 
@@ -397,7 +419,7 @@
         <button class="close-btn" id="closeBtn" aria-label="Schließen">✕</button>
     </div>
     <div class="settings-list" id="settingsList"></div>
-    <button class="save-btn" id="saveBtn">Speichern &amp; starten</button>
+    <button class="save-btn" id="saveBtn">Speichern</button>
 </div>
 
 <!-- ===== FINISH SCREEN ===== -->
@@ -429,6 +451,9 @@ const PHASE_LABEL = {
     pause:    'Pause',
     cooldown: 'Cooldown',
 };
+
+const ICON_PLAY  = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"></polygon></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="5" height="16" rx="1.5"></rect><rect x="14" y="4" width="5" height="16" rx="1.5"></rect></svg>';
 
 // ==================== SETTINGS ====================
 const DEFAULTS = {
@@ -544,6 +569,31 @@ function remainingTime() {
     return timeLeft + phaseSeq.slice(phaseIdx + 1).reduce((s, p) => s + p.duration, 0);
 }
 
+// ==================== WAKE LOCK ====================
+let wakeLock = null;
+
+async function requestWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    try {
+        wakeLock = await navigator.wakeLock.request('screen');
+    } catch (e) {
+        wakeLock = null;
+    }
+}
+
+function releaseWakeLock() {
+    if (wakeLock) {
+        wakeLock.release().catch(() => {});
+        wakeLock = null;
+    }
+}
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && running) {
+        requestWakeLock();
+    }
+});
+
 // ==================== TIMER ====================
 function initTimer() {
     clearInterval(intervalId);
@@ -552,6 +602,7 @@ function initTimer() {
     timeLeft  = phaseSeq[0].duration;
     running   = false;
     started   = false;
+    releaseWakeLock();
     updateUI();
 }
 
@@ -565,6 +616,7 @@ function startTimer() {
     }
     running = true;
     intervalId = setInterval(tick, 1000);
+    requestWakeLock();
     updateUI();
 }
 
@@ -572,6 +624,7 @@ function pauseTimer() {
     if (!running) return;
     running = false;
     clearInterval(intervalId);
+    releaseWakeLock();
     updateUI();
 }
 
@@ -600,6 +653,7 @@ function advance() {
     if (phaseIdx >= phaseSeq.length) {
         running = false;
         clearInterval(intervalId);
+        releaseWakeLock();
         phaseSound('done');
         showFinish();
         return;
@@ -651,7 +705,9 @@ function updateUI() {
     document.getElementById('outerGradB').setAttribute('stop-color', nB);
 
     // Pause/Start button
-    document.getElementById('pauseBtn').textContent = running ? 'Pause' : 'Start';
+    const pauseBtn = document.getElementById('pauseBtn');
+    pauseBtn.innerHTML = running ? ICON_PAUSE : ICON_PLAY;
+    pauseBtn.setAttribute('aria-label', running ? 'Pause' : 'Start');
 }
 
 // ==================== SETTINGS UI ====================
@@ -748,10 +804,16 @@ document.getElementById('restartBtn').addEventListener('click', () => {
     startTimer();
 });
 
-// Prevent double-tap zoom on buttons
-document.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('touchend', e => e.preventDefault());
-});
+// Prevent iOS Safari double-tap-to-zoom across the whole app (belt-and-braces
+// on top of the viewport meta tag, which some iOS versions don't fully honor).
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) e.preventDefault();
+    lastTouchEnd = now;
+}, { passive: false });
+
+document.addEventListener('dblclick', e => e.preventDefault());
 
 // ==================== SERVICE WORKER ====================
 if ('serviceWorker' in navigator) {
