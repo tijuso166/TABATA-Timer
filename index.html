@@ -279,89 +279,6 @@
             font-variant-numeric: tabular-nums;
         }
 
-        /* ===== TIME PICKER (scroll-wheel) ===== */
-        .picker-row {
-            padding: 16px 0;
-            border-bottom: 1px solid #1c1c1c;
-        }
-        .picker-row:first-child { border-top: 1px solid #1c1c1c; }
-
-        .picker-label {
-            font-size: 16px;
-            color: #ccc;
-            margin-bottom: 12px;
-        }
-
-        .picker-wheels {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-        }
-
-        .wheel-unit-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .wheel {
-            width: 52px;
-            height: 132px;
-            overflow-y: scroll;
-            scroll-snap-type: y mandatory;
-            -webkit-overflow-scrolling: touch;
-            overscroll-behavior: contain;
-            padding: 44px 0;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-        .wheel::-webkit-scrollbar { display: none; }
-
-        .wheel-item {
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 19px;
-            font-weight: 700;
-            color: #fff;
-            font-variant-numeric: tabular-nums;
-            scroll-snap-align: center;
-            will-change: opacity, transform;
-        }
-
-        .wheel-unit-label {
-            font-size: 13px;
-            color: #666;
-        }
-
-        .picker-highlight {
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            height: 44px;
-            border-top: 1px solid #333;
-            border-bottom: 1px solid #333;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 8px;
-            pointer-events: none;
-        }
-
-        .picker-hint {
-            height: 14px;
-            margin-top: 8px;
-            font-size: 12px;
-            color: #f59e0b;
-            text-align: center;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .picker-hint.visible { opacity: 1; }
-
         .save-btn {
             margin-top: 28px;
             width: 100%;
@@ -548,21 +465,14 @@ const DEFAULTS = {
     cycles:       3,
 };
 
-const TIME_CONFIG = [
-    { key: 'exerciseTime',  label: 'Exercise-Zeit', allowZero: false },
-    { key: 'pauseTime',     label: 'Pausen-Zeit',   allowZero: false },
-    { key: 'warmupTime',    label: 'Warm-up',       allowZero: true },
-    { key: 'cooldownTime',  label: 'Cooldown',      allowZero: true },
-];
-
-const STEPPER_CONFIG = [
+const SETTINGS_CONFIG = [
+    { key: 'exerciseTime',  label: 'Exercise-Zeit',       unit: 's', step: 5, min: 5 },
+    { key: 'pauseTime',     label: 'Pausen-Zeit',         unit: 's', step: 5, min: 5 },
+    { key: 'warmupTime',    label: 'Warm-up',             unit: 's', step: 5, min: 0 },
+    { key: 'cooldownTime',  label: 'Cooldown',            unit: 's', step: 5, min: 0 },
     { key: 'setsPerCycle',  label: 'Übungen pro Zyklus',  unit: '',  step: 1, min: 1 },
     { key: 'cycles',        label: 'Zyklen',              unit: '',  step: 1, min: 1 },
 ];
-
-const MIN_NONZERO_SECONDS = 5; // exercise/pause must be at least 0:05
-const WHEEL_ITEM_H = 44;
-const WHEEL_MAX    = 59;
 
 let settings = { ...DEFAULTS };
 let tempSettings = { ...DEFAULTS };
@@ -843,161 +753,20 @@ function buildStepperRow(cfg) {
     return row;
 }
 
-// ==================== SETTINGS UI: SCROLL-WHEEL TIME PICKER ====================
-function attachWheelBehavior(wheel, onSettle) {
-    let rafScheduled = false;
-    let settleTimer = null;
-
-    function paint() {
-        rafScheduled = false;
-        const scrollTop = wheel.scrollTop;
-        const centerIdx = Math.round(scrollTop / WHEEL_ITEM_H);
-        const from = Math.max(0, centerIdx - 3);
-        const to   = Math.min(WHEEL_MAX, centerIdx + 3);
-        for (let i = from; i <= to; i++) {
-            const item = wheel.children[i];
-            if (!item) continue;
-            const dist = Math.abs(i * WHEEL_ITEM_H - scrollTop) / WHEEL_ITEM_H;
-            item.style.opacity   = Math.max(0.25, 1 - dist * 0.45).toFixed(2);
-            item.style.transform = `scale(${Math.max(0.78, 1 - dist * 0.18).toFixed(2)})`;
-        }
-    }
-
-    wheel.addEventListener('scroll', () => {
-        if (!rafScheduled) {
-            rafScheduled = true;
-            requestAnimationFrame(paint);
-        }
-        clearTimeout(settleTimer);
-        settleTimer = setTimeout(onSettle, 130);
-    }, { passive: true });
-
-    wheel.__paint = paint;
-    wheel.__nearestIndex = () => Math.max(0, Math.min(WHEEL_MAX, Math.round(wheel.scrollTop / WHEEL_ITEM_H)));
-    wheel.__setIndex = (idx, animate) => {
-        const top = idx * WHEEL_ITEM_H;
-        if (animate) wheel.scrollTo({ top, behavior: 'smooth' });
-        else wheel.scrollTop = top;
-        paint();
-    };
-}
-
-function buildWheel() {
-    const wheel = document.createElement('div');
-    wheel.className = 'wheel';
-    for (let i = 0; i <= WHEEL_MAX; i++) {
-        const item = document.createElement('div');
-        item.className = 'wheel-item';
-        item.textContent = String(i).padStart(2, '0');
-        wheel.appendChild(item);
-    }
-    return wheel;
-}
-
-function showPickerHint(row, text) {
-    const hint = row.querySelector('.picker-hint');
-    hint.textContent = text;
-    hint.classList.add('visible');
-    clearTimeout(row.__hintTimer);
-    row.__hintTimer = setTimeout(() => hint.classList.remove('visible'), 1600);
-}
-
-function buildTimePicker(cfg) {
-    const initTotal = tempSettings[cfg.key];
-    const initMin = Math.floor(initTotal / 60);
-    const initSec = initTotal % 60;
-
-    const row = document.createElement('div');
-    row.className = 'picker-row';
-
-    const lbl = document.createElement('div');
-    lbl.className = 'picker-label';
-    lbl.textContent = cfg.label;
-
-    const wheelsWrap = document.createElement('div');
-    wheelsWrap.className = 'picker-wheels';
-
-    const minWheel = buildWheel();
-    const secWheel = buildWheel();
-
-    function commit() {
-        const minIdx = minWheel.__nearestIndex();
-        const secIdx = secWheel.__nearestIndex();
-        let total = minIdx * 60 + secIdx;
-        let corrected = false;
-        if (!cfg.allowZero && total < MIN_NONZERO_SECONDS) {
-            total = MIN_NONZERO_SECONDS;
-            corrected = true;
-        }
-        tempSettings[cfg.key] = total;
-        const newMin = Math.floor(total / 60);
-        const newSec = total % 60;
-        if (newMin !== minIdx) minWheel.__setIndex(newMin, true);
-        if (newSec !== secIdx) secWheel.__setIndex(newSec, true);
-        if (corrected) {
-            showPickerHint(row, `Minimum 0:${String(MIN_NONZERO_SECONDS).padStart(2, '0')}`);
-        }
-    }
-
-    attachWheelBehavior(minWheel, commit);
-    attachWheelBehavior(secWheel, commit);
-
-    const minGroup = document.createElement('div');
-    minGroup.className = 'wheel-unit-group';
-    const minLabel = document.createElement('div');
-    minLabel.className = 'wheel-unit-label';
-    minLabel.textContent = 'min';
-    minGroup.append(minWheel, minLabel);
-
-    const secGroup = document.createElement('div');
-    secGroup.className = 'wheel-unit-group';
-    const secLabel = document.createElement('div');
-    secLabel.className = 'wheel-unit-label';
-    secLabel.textContent = 'sec';
-    secGroup.append(secWheel, secLabel);
-
-    const highlight = document.createElement('div');
-    highlight.className = 'picker-highlight';
-
-    wheelsWrap.append(minGroup, secGroup, highlight);
-
-    const hint = document.createElement('div');
-    hint.className = 'picker-hint';
-
-    row.append(lbl, wheelsWrap, hint);
-
-    // Must run after the row is attached to the DOM (scrollTop needs layout).
-    row.__position = () => {
-        minWheel.__setIndex(initMin, false);
-        secWheel.__setIndex(initSec, false);
-    };
-
-    return row;
-}
-
 // ==================== SETTINGS UI ====================
 function buildSettingsUI() {
     tempSettings = { ...settings };
     const list = document.getElementById('settingsList');
     list.innerHTML = '';
-
-    TIME_CONFIG.forEach(cfg => {
-        const row = buildTimePicker(cfg);
-        list.appendChild(row);
-        row.__position();
-    });
-
-    STEPPER_CONFIG.forEach(cfg => {
+    SETTINGS_CONFIG.forEach(cfg => {
         list.appendChild(buildStepperRow(cfg));
     });
 }
 
 function openSettings() {
     pauseTimer();
-    // Overlay must be visible (display:flex) before wheels are built, otherwise
-    // scrollTop assignments on hidden elements are silently ignored.
-    document.getElementById('settingsOverlay').classList.add('active');
     buildSettingsUI();
+    document.getElementById('settingsOverlay').classList.add('active');
 }
 
 function closeSettings() {
