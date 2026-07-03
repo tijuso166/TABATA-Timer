@@ -59,9 +59,8 @@
             color: #fff;
         }
 
-        .settings-btn {
+        .settings-btn, .info-btn {
             position: absolute;
-            right: 0;
             width: 44px;
             height: 44px;
             border-radius: 50%;
@@ -74,8 +73,10 @@
             justify-content: center;
             touch-action: manipulation;
         }
-        .settings-btn:active { opacity: 0.5; }
-        .settings-btn svg { width: 19px; height: 19px; }
+        .settings-btn { right: 0; }
+        .info-btn { left: 0; }
+        .settings-btn:active, .info-btn:active { opacity: 0.5; }
+        .settings-btn svg, .info-btn svg { width: 19px; height: 19px; }
 
         /* Stats row */
         .stats-row {
@@ -143,10 +144,11 @@
         }
 
         .total-time-display {
-            font-size: 16px;
+            font-size: 13px;
             font-weight: 500;
-            color: #444;
+            color: #555;
             font-variant-numeric: tabular-nums;
+            text-align: center;
         }
 
         /* Controls */
@@ -279,6 +281,47 @@
             font-variant-numeric: tabular-nums;
         }
 
+        /* ===== FAVORITES ===== */
+        .favorites-section { margin-top: 24px; }
+
+        .favorites-label {
+            font-size: 13px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 10px;
+        }
+
+        .favorites-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .favorite-slot {
+            flex: 1;
+            min-width: 0;
+            min-height: 72px;
+            border: 1.5px dashed #333;
+            border-radius: 12px;
+            background: transparent;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 10px 4px;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .favorite-slot:not(.empty) { border-style: solid; border-color: #3a3a3a; }
+        .favorite-slot:active { opacity: 0.6; }
+
+        .favorite-plus { font-size: 20px; color: #555; line-height: 1; }
+        .favorite-empty-label { font-size: 10px; color: #555; text-align: center; line-height: 1.3; }
+        .favorite-main { font-size: 14px; font-weight: 700; color: #fff; text-align: center; }
+        .favorite-sub { font-size: 9.5px; color: #777; text-align: center; line-height: 1.3; }
+
         .save-btn {
             margin-top: 28px;
             width: 100%;
@@ -328,19 +371,101 @@
             line-height: 2;
         }
 
-        .restart-btn {
+        .finish-actions {
+            display: flex;
+            gap: 12px;
             margin-top: 16px;
-            padding: 18px 52px;
+        }
+
+        .restart-btn, .end-btn {
+            padding: 18px 40px;
             border-radius: 14px;
-            border: 2px solid #fff;
-            background: transparent;
-            color: #fff;
             font-size: 17px;
             font-weight: 700;
             cursor: pointer;
             touch-action: manipulation;
         }
-        .restart-btn:active { opacity: 0.5; }
+        .restart-btn {
+            border: 2px solid #fff;
+            background: transparent;
+            color: #fff;
+        }
+        .end-btn {
+            border: 2px solid #444;
+            background: transparent;
+            color: #aaa;
+        }
+        .restart-btn:active, .end-btn:active { opacity: 0.5; }
+
+        .ics-link {
+            margin-top: 18px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 14px;
+            text-decoration: underline;
+            cursor: pointer;
+            touch-action: manipulation;
+            padding: 8px;
+        }
+        .ics-link:active { opacity: 0.5; }
+
+        /* ===== CONFIRM DIALOG ===== */
+        .confirm-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 28px;
+        }
+        .confirm-overlay.active { display: flex; }
+
+        .confirm-box {
+            width: 100%;
+            max-width: 320px;
+            background: #111;
+            border: 1px solid #2a2a2a;
+            border-radius: 16px;
+            padding: 24px 20px;
+            text-align: center;
+        }
+
+        .confirm-text {
+            font-size: 16px;
+            color: #fff;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .confirm-actions { display: flex; gap: 12px; }
+
+        .confirm-btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .confirm-btn-secondary { border: 2px solid #fff; background: transparent; color: #fff; }
+        .confirm-btn-danger { border: 2px solid #ef4444; background: transparent; color: #ef4444; }
+        .confirm-btn:active { opacity: 0.5; }
+
+        /* ===== README OVERLAY ===== */
+        .readme-content {
+            flex: 1;
+            overflow-y: auto;
+            color: #ccc;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .readme-content p { margin-bottom: 16px; }
+        .readme-content a { color: #fff; }
+        .readme-version { color: #555; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -348,6 +473,13 @@
 <!-- ===== TIMER SCREEN ===== -->
 <div class="screen" id="timerScreen">
     <div class="phase-header">
+        <button class="info-btn" id="infoBtn" aria-label="Info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"></circle>
+                <line x1="12" y1="11" x2="12" y2="16"></line>
+                <circle cx="12" cy="7.5" r="0.5" fill="currentColor" stroke="none"></circle>
+            </svg>
+        </button>
         <div class="phase-name" id="phaseName">Warm-up</div>
         <button class="settings-btn" id="settingsBtn" aria-label="Einstellungen">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -371,33 +503,21 @@
     <div class="ring-container">
         <svg class="ring-svg" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
             <defs>
-                <linearGradient id="outerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" id="outerGradA" stop-color="#22c55e"/>
-                    <stop offset="100%" id="outerGradB" stop-color="#06b6d4"/>
-                </linearGradient>
-                <linearGradient id="innerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" id="innerGradA" stop-color="#22c55e"/>
-                    <stop offset="100%" id="innerGradB" stop-color="#06b6d4"/>
+                <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" id="ringGradA" stop-color="#22c55e"/>
+                    <stop offset="100%" id="ringGradB" stop-color="#06b6d4"/>
                 </linearGradient>
             </defs>
-            <!-- Outer track -->
-            <circle cx="130" cy="130" r="118" fill="none" stroke="#1a1a1a" stroke-width="14"/>
-            <!-- Outer ring: next phase, always full -->
-            <circle id="outerRing" cx="130" cy="130" r="118" fill="none"
-                    stroke="url(#outerGrad)" stroke-width="14" stroke-linecap="round"
+            <!-- Track -->
+            <circle cx="130" cy="130" r="105" fill="none" stroke="#1a1a1a" stroke-width="17"/>
+            <!-- Single ring: current phase, fills over time -->
+            <circle id="ring" cx="130" cy="130" r="105" fill="none"
+                    stroke="url(#ringGrad)" stroke-width="17" stroke-linecap="round"
                     transform="rotate(-90 130 130)"
-                    stroke-dasharray="741.42" stroke-dashoffset="0"/>
-            <!-- Inner track -->
-            <circle cx="130" cy="130" r="96" fill="none" stroke="#1a1a1a" stroke-width="14"/>
-            <!-- Inner ring: current phase, fills over time -->
-            <circle id="innerRing" cx="130" cy="130" r="96" fill="none"
-                    stroke="url(#innerGrad)" stroke-width="14" stroke-linecap="round"
-                    transform="rotate(-90 130 130)"
-                    stroke-dasharray="603.19" stroke-dashoffset="603.19"/>
+                    stroke-dasharray="659.73" stroke-dashoffset="659.73"/>
         </svg>
         <div class="timer-center">
             <div class="countdown-number" id="countdownNum">60</div>
-            <div class="total-time-display" id="totalTimeDisplay">00:00</div>
         </div>
     </div>
 
@@ -410,6 +530,8 @@
             <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="4,4 13,12 4,20"></polygon><polygon points="12,4 21,12 12,20"></polygon></svg>
         </button>
     </div>
+
+    <div class="total-time-display" id="totalTimeDisplay">-00:00</div>
 </div>
 
 <!-- ===== SETTINGS OVERLAY ===== -->
@@ -427,15 +549,50 @@
     <div class="finish-check">✓</div>
     <div class="finish-title">Workout abgeschlossen!</div>
     <div class="finish-stats" id="finishStats"></div>
-    <button class="restart-btn" id="restartBtn">Nochmal</button>
+    <div class="finish-actions">
+        <button class="restart-btn" id="restartBtn">Nochmal</button>
+        <button class="end-btn" id="endBtn">Ende</button>
+    </div>
+    <button class="ics-link" id="icsBtn">Zum Kalender hinzufügen</button>
+</div>
+
+<!-- ===== STOP CONFIRMATION ===== -->
+<div class="confirm-overlay" id="stopConfirmOverlay">
+    <div class="confirm-box">
+        <div class="confirm-text">Workout wirklich beenden?</div>
+        <div class="confirm-actions">
+            <button class="confirm-btn confirm-btn-secondary" id="stopCancelBtn">Nein</button>
+            <button class="confirm-btn confirm-btn-danger" id="stopConfirmBtn">Ja</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== README OVERLAY ===== -->
+<div class="overlay" id="readmeOverlay">
+    <div class="overlay-header">
+        <div class="overlay-title">Über die App</div>
+        <button class="close-btn" id="readmeCloseBtn" aria-label="Schließen">✕</button>
+    </div>
+    <div class="readme-content">
+        <p>Feedback &amp; Bugs an: <a href="mailto:til.sonntag@gmail.com">til.sonntag@gmail.com</a></p>
+        <p class="readme-version" id="readmeVersion"></p>
+    </div>
 </div>
 
 <script>
+// ==================== VERSION ====================
+// Semantic versioning (MAJOR.MINOR.PATCH):
+//   PATCH (+0.0.1): bugfixes only (e.g. rendering glitches, sound repairs)
+//   MINOR (+0.1.0): new features (e.g. favorites, calendar export, countdown)
+//   MAJOR (+1.0.0): breaking changes to the core concept
+// Bump both constants below (date in ISO format) with every shipped change.
+const APP_VERSION = '1.1.0';
+const APP_VERSION_DATE = '2026-07-03';
+
 // ==================== CONSTANTS ====================
-const INNER_R    = 96;
-const OUTER_R    = 118;
-const INNER_CIRC = 2 * Math.PI * INNER_R;   // ~603.19
-const OUTER_CIRC = 2 * Math.PI * OUTER_R;   // ~741.42
+const RING_R    = 105;
+const RING_CIRC = 2 * Math.PI * RING_R;   // ~659.73
+const EXPECTED_RING_COUNT = 2; // 1 background track + 1 progress ring, never more
 
 const COLORS = {
     warmup:   ['#22c55e', '#06b6d4'],
@@ -477,77 +634,166 @@ const SETTINGS_CONFIG = [
 let settings = { ...DEFAULTS };
 let tempSettings = { ...DEFAULTS };
 
+// ==================== FAVORITES ====================
+const FAVORITES_KEY = 'tabataFavorites';
+const FAVORITE_FIELDS = ['exerciseTime', 'pauseTime', 'warmupTime', 'cooldownTime', 'setsPerCycle', 'cycles'];
+
+function loadFavorites() {
+    try {
+        const raw = localStorage.getItem(FAVORITES_KEY);
+        const arr = raw ? JSON.parse(raw) : null;
+        if (Array.isArray(arr) && arr.length === 3) return arr;
+    } catch (e) {
+        console.error('[favorites] failed to load, resetting:', e);
+    }
+    return [null, null, null];
+}
+
+function persistFavorites() {
+    try {
+        localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+    } catch (e) {
+        console.error('[favorites] failed to save:', e);
+    }
+}
+
+let favorites = loadFavorites();
+
 // ==================== STATE ====================
 let phaseSeq   = [];   // [{type, duration, set, cycle}]
 let phaseIdx   = 0;
 let timeLeft   = 0;
 let running    = false;
-let started    = false; // has the timer ever been started this session?
+let started    = false; // has the first real phase begun (i.e. the 3-2-1 countdown finished)?
 let intervalId = null;
+let preCountdownValue = 0; // >0 while showing the 3-2-1 pre-workout countdown
+let lastWorkoutDurationSec = 0; // captured at finish time, used for the .ics export
 
 // ==================== AUDIO ====================
 let audioCtx = null;
 
 function audio() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!audioCtx) {
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            console.log('[audio] AudioContext created, state:', audioCtx.state);
+        } catch (e) {
+            console.error('[audio] failed to create AudioContext:', e);
+        }
+    }
     return audioCtx;
 }
 
-function tone(freq, when, dur, vol = 0.3) {
+// Sounds are scheduled from setInterval callbacks, not user gestures, so the
+// context can end up 'suspended' (first load, or after the tab/app was
+// backgrounded) — resume it defensively before every scheduled sound.
+function ensureAudioResumed() {
     const ctx = audio();
-    const osc = ctx.createOscillator();
-    const g   = ctx.createGain();
-    osc.connect(g);
-    g.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-    g.gain.setValueAtTime(0, when);
-    g.gain.linearRampToValueAtTime(vol, when + 0.01);
-    g.gain.linearRampToValueAtTime(0, when + dur);
-    osc.start(when);
-    osc.stop(when + dur + 0.02);
+    if (ctx && ctx.state === 'suspended') {
+        ctx.resume()
+            .then(() => console.log('[audio] resumed ok, state:', ctx.state))
+            .catch(e => console.error('[audio] resume FAILED:', e));
+    }
+    return ctx;
 }
 
-function sweep(f0, f1, when, dur, vol = 0.25) {
-    const ctx = audio();
-    const osc = ctx.createOscillator();
-    const g   = ctx.createGain();
-    osc.connect(g);
-    g.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(f0, when);
-    osc.frequency.linearRampToValueAtTime(f1, when + dur);
-    g.gain.setValueAtTime(0, when);
-    g.gain.linearRampToValueAtTime(vol, when + 0.01);
-    g.gain.linearRampToValueAtTime(0, when + dur);
-    osc.start(when);
-    osc.stop(when + dur + 0.02);
+function tone(freq, when, dur, vol, label) {
+    try {
+        const ctx = audio();
+        if (!ctx) throw new Error('no AudioContext available');
+        const osc = ctx.createOscillator();
+        const g   = ctx.createGain();
+        osc.connect(g);
+        g.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(0, when);
+        g.gain.linearRampToValueAtTime(vol, when + 0.01);
+        g.gain.linearRampToValueAtTime(0, when + dur);
+        osc.start(when);
+        osc.stop(when + dur + 0.02);
+        console.log(`[audio] ${label} ok (freq=${freq}Hz, ctxState=${ctx.state})`);
+        return true;
+    } catch (e) {
+        console.error(`[audio] ${label} FAILED to start:`, e);
+        return false;
+    }
+}
+
+function sweep(f0, f1, when, dur, vol, label) {
+    try {
+        const ctx = audio();
+        if (!ctx) throw new Error('no AudioContext available');
+        const osc = ctx.createOscillator();
+        const g   = ctx.createGain();
+        osc.connect(g);
+        g.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f0, when);
+        osc.frequency.linearRampToValueAtTime(f1, when + dur);
+        g.gain.setValueAtTime(0, when);
+        g.gain.linearRampToValueAtTime(vol, when + 0.01);
+        g.gain.linearRampToValueAtTime(0, when + dur);
+        osc.start(when);
+        osc.stop(when + dur + 0.02);
+        console.log(`[audio] ${label} ok (sweep ${f0}->${f1}Hz, ctxState=${ctx.state})`);
+        return true;
+    } catch (e) {
+        console.error(`[audio] ${label} FAILED to start:`, e);
+        return false;
+    }
 }
 
 function beep() {
-    tone(880, audio().currentTime, 0.08, 0.28);
+    ensureAudioResumed();
+    tone(880, audio().currentTime, 0.08, 0.28, 'countdown-beep');
+    vibrate(50);
 }
 
 function phaseSound(type) {
+    ensureAudioResumed();
     const t = audio().currentTime;
     switch (type) {
         case 'warmup':
-            sweep(440, 660, t, 0.4);
+            sweep(440, 660, t, 0.4, 0.25, 'warmup-start');
             break;
         case 'exercise':
-            tone(1047, t, 0.15, 0.35);
-            tone(1319, t + 0.17, 0.15, 0.35);
+            tone(1047, t, 0.15, 0.35, 'exercise-start-1');
+            tone(1319, t + 0.17, 0.15, 0.35, 'exercise-start-2');
             break;
         case 'pause':
-            sweep(659, 523, t, 0.3, 0.3);
+            sweep(659, 523, t, 0.3, 0.3, 'pause-start');
             break;
         case 'cooldown':
-            sweep(660, 440, t, 0.4);
+            sweep(660, 440, t, 0.4, 0.25, 'cooldown-start');
             break;
         case 'done':
-            [523, 659, 784, 1047].forEach((f, i) => tone(f, t + i * 0.16, 0.15, 0.35));
+            [523, 659, 784, 1047].forEach((f, i) => tone(f, t + i * 0.16, 0.15, 0.35, `done-arpeggio-${i}`));
             break;
     }
+}
+
+// ==================== VIBRATION ====================
+const PHASE_VIBRATION = {
+    exercise: [100],
+    pause:    [200, 100, 200],
+    warmup:   [200, 100, 200],
+    cooldown: [200, 100, 200],
+};
+
+function vibrate(pattern) {
+    if (!('vibrate' in navigator)) return; // e.g. iOS Safari: known platform limit, ignore silently
+    try {
+        const accepted = navigator.vibrate(pattern);
+        console.log(`[vibrate] pattern=${JSON.stringify(pattern)} accepted=${accepted}`);
+    } catch (e) {
+        console.error('[vibrate] failed:', e);
+    }
+}
+
+function phaseVibrate(type) {
+    const pattern = PHASE_VIBRATION[type];
+    if (pattern) vibrate(pattern);
 }
 
 // ==================== SEQUENCE ====================
@@ -570,6 +816,33 @@ function remainingTime() {
     return timeLeft + phaseSeq.slice(phaseIdx + 1).reduce((s, p) => s + p.duration, 0);
 }
 
+// ==================== RING INTEGRITY CHECK ====================
+// Only a single ring is allowed to exist now: 1 background track + 1
+// progress circle, nothing more. Called at every phase change and logs the
+// result unconditionally, so a regression is immediately visible in the
+// console; if a duplicate ever shows up, it's removed on the spot.
+function verifyRingIntegrity(context) {
+    const svg = document.querySelector('.ring-svg');
+    if (!svg) return;
+    const circles = svg.querySelectorAll('circle');
+    if (circles.length === EXPECTED_RING_COUNT) {
+        console.log(`[ring-check] ${context}: OK — ${circles.length} <circle> element(s) (1 track + 1 progress ring).`);
+        return;
+    }
+    console.error(`[ring-check] ${context}: MISMATCH — found ${circles.length} <circle> element(s), expected ${EXPECTED_RING_COUNT}. Removing extras.`);
+    const seenIds = new Set();
+    let untaggedCount = 0;
+    circles.forEach(c => {
+        if (c.id) {
+            if (seenIds.has(c.id)) { c.remove(); return; }
+            seenIds.add(c.id);
+        } else {
+            untaggedCount++;
+            if (untaggedCount > 1) c.remove();
+        }
+    });
+}
+
 // ==================== WAKE LOCK ====================
 let wakeLock = null;
 
@@ -590,41 +863,79 @@ function releaseWakeLock() {
 }
 
 document.addEventListener('visibilitychange', () => {
+    console.log(`[visibility] -> ${document.visibilityState} | running=${running} | audioCtxState=${audioCtx ? audioCtx.state : 'none'} | intervalActive=${intervalId !== null}`);
     if (document.visibilityState === 'visible' && running) {
         requestWakeLock();
+        ensureAudioResumed();
     }
 });
 
 // ==================== TIMER ====================
 function initTimer() {
     clearInterval(intervalId);
+    intervalId = null;
     phaseSeq  = buildSeq(settings);
     phaseIdx  = 0;
     timeLeft  = phaseSeq[0].duration;
     running   = false;
     started   = false;
+    preCountdownValue = 0;
     releaseWakeLock();
     updateUI();
 }
 
 function startTimer() {
     if (running) return;
-    const ctx = audio();
-    if (ctx.state === 'suspended') ctx.resume();
+    ensureAudioResumed();
     if (!started) {
-        started = true;
-        phaseSound(phaseSeq[phaseIdx].type);
+        runPreCountdown();
+        return;
     }
+    // Resuming after a manual mid-workout pause: no countdown, continue directly.
     running = true;
     intervalId = setInterval(tick, 1000);
     requestWakeLock();
     updateUI();
 }
 
+function runPreCountdown() {
+    running = true;
+    preCountdownValue = 3;
+    requestWakeLock();
+    verifyRingIntegrity('pre-workout countdown start');
+    beep();
+    updateUI();
+    intervalId = setInterval(() => {
+        preCountdownValue--;
+        if (preCountdownValue <= 0) {
+            clearInterval(intervalId);
+            preCountdownValue = 0;
+            beginFirstPhase();
+        } else {
+            beep();
+            updateUI();
+        }
+    }, 1000);
+}
+
+function beginFirstPhase() {
+    started = true;
+    timeLeft = phaseSeq[phaseIdx].duration;
+    phaseSound(phaseSeq[phaseIdx].type);
+    phaseVibrate(phaseSeq[phaseIdx].type);
+    intervalId = setInterval(tick, 1000);
+    updateUI();
+    verifyRingIntegrity(`phase start: ${phaseSeq[phaseIdx].type}`);
+}
+
 function pauseTimer() {
     if (!running) return;
     running = false;
     clearInterval(intervalId);
+    intervalId = null;
+    // Cancelling mid pre-countdown means starting over from "3" next time,
+    // since the workout hasn't actually begun yet.
+    if (preCountdownValue > 0) preCountdownValue = 0;
     releaseWakeLock();
     updateUI();
 }
@@ -634,8 +945,8 @@ function stopTimer() {
 }
 
 function skipPhase() {
-    const ctx = audio();
-    if (ctx.state === 'suspended') ctx.resume();
+    if (preCountdownValue > 0) return; // nothing to skip before the workout has begun
+    ensureAudioResumed();
     advance();
 }
 
@@ -654,6 +965,7 @@ function advance() {
     if (phaseIdx >= phaseSeq.length) {
         running = false;
         clearInterval(intervalId);
+        intervalId = null;
         releaseWakeLock();
         phaseSound('done');
         showFinish();
@@ -661,7 +973,9 @@ function advance() {
     }
     timeLeft = phaseSeq[phaseIdx].duration;
     phaseSound(phaseSeq[phaseIdx].type);
+    phaseVibrate(phaseSeq[phaseIdx].type);
     updateUI();
+    verifyRingIntegrity(`phase change: ${phaseSeq[phaseIdx].type}`);
 }
 
 // ==================== UI ====================
@@ -671,10 +985,23 @@ function fmt(s) {
     return `${m}:${sec}`;
 }
 
+function updatePauseIcon() {
+    const pauseBtn = document.getElementById('pauseBtn');
+    pauseBtn.innerHTML = running ? ICON_PAUSE : ICON_PLAY;
+    pauseBtn.setAttribute('aria-label', running ? 'Pause' : 'Start');
+}
+
 function updateUI() {
+    if (preCountdownValue > 0) {
+        // Ring/stats were already rendered correctly by the last real render
+        // (idle state points at phaseSeq[0]); only the big number changes.
+        document.getElementById('countdownNum').textContent = preCountdownValue;
+        updatePauseIcon();
+        return;
+    }
+
     if (phaseIdx >= phaseSeq.length) return;
     const phase = phaseSeq[phaseIdx];
-    const next  = phaseSeq[phaseIdx + 1] || { type: 'done' };
 
     // Header
     document.getElementById('phaseName').textContent = PHASE_LABEL[phase.type];
@@ -690,28 +1017,24 @@ function updateUI() {
 
     // Numbers
     document.getElementById('countdownNum').textContent = timeLeft;
-    document.getElementById('totalTimeDisplay').textContent = fmt(remainingTime());
+    document.getElementById('totalTimeDisplay').textContent = '-' + fmt(remainingTime());
 
-    // Inner ring (current phase progress, fills clockwise)
+    // Ring (current phase progress, fills clockwise)
     const progress = (phase.duration - timeLeft) / phase.duration;
-    const innerOffset = INNER_CIRC * (1 - progress);
-    document.getElementById('innerRing').setAttribute('stroke-dashoffset', innerOffset.toFixed(2));
+    const ringOffset = RING_CIRC * (1 - progress);
+    document.getElementById('ring').setAttribute('stroke-dashoffset', ringOffset.toFixed(2));
 
-    // Colors
+    // Color (current phase only — there is no second ring to preview "next")
     const [cA, cB] = COLORS[phase.type];
-    const [nA, nB] = COLORS[next.type];
-    document.getElementById('innerGradA').setAttribute('stop-color', cA);
-    document.getElementById('innerGradB').setAttribute('stop-color', cB);
-    document.getElementById('outerGradA').setAttribute('stop-color', nA);
-    document.getElementById('outerGradB').setAttribute('stop-color', nB);
+    document.getElementById('ringGradA').setAttribute('stop-color', cA);
+    document.getElementById('ringGradB').setAttribute('stop-color', cB);
 
-    // Pause/Start button
-    const pauseBtn = document.getElementById('pauseBtn');
-    pauseBtn.innerHTML = running ? ICON_PAUSE : ICON_PLAY;
-    pauseBtn.setAttribute('aria-label', running ? 'Pause' : 'Start');
+    updatePauseIcon();
 }
 
 // ==================== SETTINGS UI: STEPPERS ====================
+let stepperValueEls = {};
+
 function buildStepperRow(cfg) {
     const row = document.createElement('div');
     row.className = 'stepper-row';
@@ -731,6 +1054,7 @@ function buildStepperRow(cfg) {
     const val = document.createElement('div');
     val.className = 'stepper-value';
     val.textContent = tempSettings[cfg.key] + cfg.unit;
+    stepperValueEls[cfg.key] = val;
 
     const plus = document.createElement('button');
     plus.className = 'stepper-btn';
@@ -753,14 +1077,110 @@ function buildStepperRow(cfg) {
     return row;
 }
 
+function refreshStepperDisplays() {
+    SETTINGS_CONFIG.forEach(cfg => {
+        if (stepperValueEls[cfg.key]) {
+            stepperValueEls[cfg.key].textContent = tempSettings[cfg.key] + cfg.unit;
+        }
+    });
+}
+
+// ==================== SETTINGS UI: FAVORITES ====================
+function renderFavoriteSlot(slot, fav) {
+    slot.innerHTML = '';
+    if (!fav) {
+        slot.classList.add('empty');
+        const plus = document.createElement('div');
+        plus.className = 'favorite-plus';
+        plus.textContent = '+';
+        const label = document.createElement('div');
+        label.className = 'favorite-empty-label';
+        label.textContent = 'Favorit speichern';
+        slot.append(plus, label);
+    } else {
+        slot.classList.remove('empty');
+        const main = document.createElement('div');
+        main.className = 'favorite-main';
+        main.textContent = `${fav.exerciseTime}s/${fav.pauseTime}s`;
+        const sub = document.createElement('div');
+        sub.className = 'favorite-sub';
+        sub.textContent = `Sets: ${fav.setsPerCycle} / Zyklen: ${fav.cycles}`;
+        slot.append(main, sub);
+    }
+}
+
+function buildFavoriteSlot(idx) {
+    const slot = document.createElement('button');
+    slot.className = 'favorite-slot';
+    slot.type = 'button';
+    renderFavoriteSlot(slot, favorites[idx]);
+
+    let pressTimer = null;
+    let longPressFired = false;
+
+    const startPress = () => {
+        longPressFired = false;
+        pressTimer = setTimeout(() => {
+            if (favorites[idx]) {
+                longPressFired = true;
+                if (confirm('Favorit überschreiben?')) {
+                    favorites[idx] = null;
+                    persistFavorites();
+                    renderFavoriteSlot(slot, null);
+                }
+            }
+        }, 600);
+    };
+    const cancelPress = () => clearTimeout(pressTimer);
+
+    slot.addEventListener('touchstart', startPress, { passive: true });
+    slot.addEventListener('touchend', cancelPress);
+    slot.addEventListener('touchmove', cancelPress);
+    slot.addEventListener('mousedown', startPress);
+    slot.addEventListener('mouseup', cancelPress);
+    slot.addEventListener('mouseleave', cancelPress);
+
+    slot.addEventListener('click', () => {
+        if (longPressFired) { longPressFired = false; return; }
+        if (!favorites[idx]) {
+            favorites[idx] = FAVORITE_FIELDS.reduce((acc, k) => { acc[k] = tempSettings[k]; return acc; }, {});
+            persistFavorites();
+            renderFavoriteSlot(slot, favorites[idx]);
+        } else {
+            FAVORITE_FIELDS.forEach(k => { tempSettings[k] = favorites[idx][k]; });
+            refreshStepperDisplays();
+        }
+    });
+
+    return slot;
+}
+
+function buildFavoritesSection() {
+    const wrap = document.createElement('div');
+    wrap.className = 'favorites-section';
+
+    const label = document.createElement('div');
+    label.className = 'favorites-label';
+    label.textContent = 'Favoriten';
+
+    const row = document.createElement('div');
+    row.className = 'favorites-row';
+    for (let i = 0; i < 3; i++) row.appendChild(buildFavoriteSlot(i));
+
+    wrap.append(label, row);
+    return wrap;
+}
+
 // ==================== SETTINGS UI ====================
 function buildSettingsUI() {
     tempSettings = { ...settings };
+    stepperValueEls = {};
     const list = document.getElementById('settingsList');
     list.innerHTML = '';
     SETTINGS_CONFIG.forEach(cfg => {
         list.appendChild(buildStepperRow(cfg));
     });
+    list.appendChild(buildFavoritesSection());
 }
 
 function openSettings() {
@@ -773,19 +1193,61 @@ function closeSettings() {
     document.getElementById('settingsOverlay').classList.remove('active');
 }
 
-function saveAndStart() {
+function saveSettings() {
     settings = { ...tempSettings };
     closeSettings();
+    // Only apply the values and return to the (idle, 0%-ring) start screen —
+    // the user has to press Play themselves.
     initTimer();
-    startTimer();
 }
 
 // ==================== FINISH SCREEN ====================
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+function icsTimestamp(date) {
+    return date.getUTCFullYear() +
+        pad2(date.getUTCMonth() + 1) +
+        pad2(date.getUTCDate()) + 'T' +
+        pad2(date.getUTCHours()) +
+        pad2(date.getUTCMinutes()) +
+        pad2(date.getUTCSeconds()) + 'Z';
+}
+
+function downloadWorkoutICS() {
+    const end = new Date();
+    const start = new Date(end.getTime() - lastWorkoutDurationSec * 1000);
+    const ics = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Tabata Timer//DE',
+        'BEGIN:VEVENT',
+        `UID:${Date.now()}@tabata-timer`,
+        `DTSTAMP:${icsTimestamp(new Date())}`,
+        `DTSTART:${icsTimestamp(start)}`,
+        `DTEND:${icsTimestamp(end)}`,
+        'SUMMARY:HIIT Workout',
+        'END:VEVENT',
+        'END:VCALENDAR',
+        '',
+    ].join('\r\n');
+
+    const blob = new Blob([ics], { type: 'text/calendar' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'hiit-workout.ics';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function showFinish() {
+    verifyRingIntegrity('showFinish');
     const totalSets = settings.setsPerCycle * settings.cycles;
-    const totalSec  = buildSeq(settings).reduce((s, p) => s + p.duration, 0);
+    lastWorkoutDurationSec = buildSeq(settings).reduce((s, p) => s + p.duration, 0);
     document.getElementById('finishStats').innerHTML =
-        `Gesamtzeit: ${fmt(totalSec)}<br>${totalSets} Sets &middot; ${settings.cycles} Zyklen`;
+        `Gesamtzeit: ${fmt(lastWorkoutDurationSec)}<br>${totalSets} Sets &middot; ${settings.cycles} Zyklen`;
     document.getElementById('finishScreen').classList.add('active');
 }
 
@@ -793,31 +1255,63 @@ function hideFinish() {
     document.getElementById('finishScreen').classList.remove('active');
 }
 
+// ==================== STOP CONFIRMATION ====================
+function openStopConfirm() {
+    document.getElementById('stopConfirmOverlay').classList.add('active');
+}
+
+function closeStopConfirm() {
+    document.getElementById('stopConfirmOverlay').classList.remove('active');
+}
+
+// ==================== README OVERLAY ====================
+function formatDeDate(isoDate) {
+    const [y, m, d] = isoDate.split('-');
+    return `${d}.${m}.${y}`;
+}
+
+function openReadme() {
+    document.getElementById('readmeVersion').textContent = `Version ${APP_VERSION} · ${formatDeDate(APP_VERSION_DATE)}`;
+    document.getElementById('readmeOverlay').classList.add('active');
+}
+
+function closeReadme() {
+    document.getElementById('readmeOverlay').classList.remove('active');
+}
+
 // ==================== EVENT LISTENERS ====================
 document.getElementById('settingsBtn').addEventListener('click', openSettings);
 document.getElementById('closeBtn').addEventListener('click', closeSettings);
-document.getElementById('saveBtn').addEventListener('click', saveAndStart);
+document.getElementById('saveBtn').addEventListener('click', saveSettings);
+
+document.getElementById('infoBtn').addEventListener('click', openReadme);
+document.getElementById('readmeCloseBtn').addEventListener('click', closeReadme);
 
 document.getElementById('pauseBtn').addEventListener('click', () => {
     if (running) pauseTimer(); else startTimer();
 });
-document.getElementById('stopBtn').addEventListener('click', stopTimer);
+document.getElementById('stopBtn').addEventListener('click', openStopConfirm);
+document.getElementById('stopCancelBtn').addEventListener('click', closeStopConfirm);
+document.getElementById('stopConfirmBtn').addEventListener('click', () => {
+    closeStopConfirm();
+    stopTimer();
+});
 document.getElementById('skipBtn').addEventListener('click', skipPhase);
 document.getElementById('restartBtn').addEventListener('click', () => {
     hideFinish();
     initTimer();
     startTimer();
 });
+document.getElementById('endBtn').addEventListener('click', () => {
+    hideFinish();
+    initTimer();
+});
+document.getElementById('icsBtn').addEventListener('click', downloadWorkoutICS);
 
-// Prevent iOS Safari double-tap-to-zoom across the whole app (belt-and-braces
-// on top of the viewport meta tag, which some iOS versions don't fully honor).
-let lastTouchEnd = 0;
-document.addEventListener('touchend', e => {
-    const now = Date.now();
-    if (now - lastTouchEnd <= 300) e.preventDefault();
-    lastTouchEnd = now;
-}, { passive: false });
-
+// touch-action: manipulation (already set throughout the CSS) plus
+// user-scalable=no in the viewport meta tag are sufficient to disable
+// double-tap-to-zoom natively — no JS touchend interception needed, since
+// that previously ate legitimate rapid taps on the stepper +/- buttons.
 document.addEventListener('dblclick', e => e.preventDefault());
 
 // ==================== SERVICE WORKER ====================
@@ -828,6 +1322,7 @@ if ('serviceWorker' in navigator) {
 }
 
 // ==================== BOOT ====================
+console.log(`[boot] Tabata Timer v${APP_VERSION} (${APP_VERSION_DATE})`);
 initTimer();
 </script>
 </body>
