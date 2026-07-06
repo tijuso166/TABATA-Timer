@@ -397,19 +397,6 @@
         }
         .restart-btn:active, .end-btn:active { opacity: 0.5; }
 
-        .ics-link {
-            margin-top: 18px;
-            background: none;
-            border: none;
-            color: #666;
-            font-size: 14px;
-            text-decoration: underline;
-            cursor: pointer;
-            touch-action: manipulation;
-            padding: 8px;
-        }
-        .ics-link:active { opacity: 0.5; }
-
         /* ===== CONFIRM DIALOG ===== */
         .confirm-overlay {
             display: none;
@@ -553,7 +540,6 @@
         <button class="restart-btn" id="restartBtn">Nochmal</button>
         <button class="end-btn" id="endBtn">Ende</button>
     </div>
-    <button class="ics-link" id="icsBtn">Zum Kalender hinzufügen</button>
 </div>
 
 <!-- ===== STOP CONFIRMATION ===== -->
@@ -586,7 +572,7 @@
 //   MINOR (+0.1.0): new features (e.g. favorites, calendar export, countdown)
 //   MAJOR (+1.0.0): breaking changes to the core concept
 // Bump both constants below (date in ISO format) with every shipped change.
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.1.1';
 const APP_VERSION_DATE = '2026-07-03';
 
 // ==================== CONSTANTS ====================
@@ -667,7 +653,6 @@ let running    = false;
 let started    = false; // has the first real phase begun (i.e. the 3-2-1 countdown finished)?
 let intervalId = null;
 let preCountdownValue = 0; // >0 while showing the 3-2-1 pre-workout countdown
-let lastWorkoutDurationSec = 0; // captured at finish time, used for the .ics export
 
 // ==================== AUDIO ====================
 let audioCtx = null;
@@ -1202,52 +1187,12 @@ function saveSettings() {
 }
 
 // ==================== FINISH SCREEN ====================
-function pad2(n) { return String(n).padStart(2, '0'); }
-
-function icsTimestamp(date) {
-    return date.getUTCFullYear() +
-        pad2(date.getUTCMonth() + 1) +
-        pad2(date.getUTCDate()) + 'T' +
-        pad2(date.getUTCHours()) +
-        pad2(date.getUTCMinutes()) +
-        pad2(date.getUTCSeconds()) + 'Z';
-}
-
-function downloadWorkoutICS() {
-    const end = new Date();
-    const start = new Date(end.getTime() - lastWorkoutDurationSec * 1000);
-    const ics = [
-        'BEGIN:VCALENDAR',
-        'VERSION:2.0',
-        'PRODID:-//Tabata Timer//DE',
-        'BEGIN:VEVENT',
-        `UID:${Date.now()}@tabata-timer`,
-        `DTSTAMP:${icsTimestamp(new Date())}`,
-        `DTSTART:${icsTimestamp(start)}`,
-        `DTEND:${icsTimestamp(end)}`,
-        'SUMMARY:HIIT Workout',
-        'END:VEVENT',
-        'END:VCALENDAR',
-        '',
-    ].join('\r\n');
-
-    const blob = new Blob([ics], { type: 'text/calendar' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'hiit-workout.ics';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
 function showFinish() {
     verifyRingIntegrity('showFinish');
     const totalSets = settings.setsPerCycle * settings.cycles;
-    lastWorkoutDurationSec = buildSeq(settings).reduce((s, p) => s + p.duration, 0);
+    const totalSec = buildSeq(settings).reduce((s, p) => s + p.duration, 0);
     document.getElementById('finishStats').innerHTML =
-        `Gesamtzeit: ${fmt(lastWorkoutDurationSec)}<br>${totalSets} Sets &middot; ${settings.cycles} Zyklen`;
+        `Gesamtzeit: ${fmt(totalSec)}<br>${totalSets} Sets &middot; ${settings.cycles} Zyklen`;
     document.getElementById('finishScreen').classList.add('active');
 }
 
@@ -1306,7 +1251,6 @@ document.getElementById('endBtn').addEventListener('click', () => {
     hideFinish();
     initTimer();
 });
-document.getElementById('icsBtn').addEventListener('click', downloadWorkoutICS);
 
 // touch-action: manipulation (already set throughout the CSS) plus
 // user-scalable=no in the viewport meta tag are sufficient to disable
