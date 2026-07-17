@@ -397,6 +397,19 @@
         }
         .restart-btn:active, .end-btn:active { opacity: 0.5; }
 
+        .ics-link {
+            margin-top: 18px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 14px;
+            text-decoration: underline;
+            cursor: pointer;
+            touch-action: manipulation;
+            padding: 8px;
+        }
+        .ics-link:active { opacity: 0.5; }
+
         /* ===== CONFIRM DIALOG ===== */
         .confirm-overlay {
             display: none;
@@ -540,6 +553,7 @@
         <button class="restart-btn" id="restartBtn">Nochmal</button>
         <button class="end-btn" id="endBtn">Ende</button>
     </div>
+    <button class="ics-link" id="icsBtn">In Kalender eintragen</button>
 </div>
 
 <!-- ===== STOP CONFIRMATION ===== -->
@@ -572,8 +586,8 @@
 //   MINOR (+0.1.0): new features (e.g. favorites, calendar export, countdown)
 //   MAJOR (+1.0.0): breaking changes to the core concept
 // Bump both constants below (date in ISO format) with every shipped change.
-const APP_VERSION = '1.1.1';
-const APP_VERSION_DATE = '2026-07-03';
+const APP_VERSION = '1.2.0';
+const APP_VERSION_DATE = '2026-07-17';
 
 // ==================== CONSTANTS ====================
 const RING_R    = 105;
@@ -653,8 +667,29 @@ let running    = false;
 let started    = false; // has the first real phase begun (i.e. the 3-2-1 countdown finished)?
 let intervalId = null;
 let preCountdownValue = 0; // >0 while showing the 3-2-1 pre-workout countdown
+let lastWorkoutDurationSec = 0; // planned total duration, captured at finish time, used for the .ics export
 
 // ==================== AUDIO ====================
+// iOS Safari standalone-PWA sound/vibration debugging notes (checked against
+// the known iOS Safari quirks a-e):
+//  a) FIXED: ensureAudioResumed() now checks ctx.state === 'suspended' and
+//     AWAITS ctx.resume() before every single sound (beep + phaseSound),
+//     not just once at first launch. iOS re-suspends the AudioContext after
+//     screen lock / backgrounding, so this must run every time.
+//  b) FIXED: exactly one AudioContext instance for the whole app lifetime,
+//     created lazily by audio() and cached in `audioCtx` — never recreated.
+//  c) OK: the very first resume() call happens synchronously inside the
+//     Play-button click handler (startTimer -> runPreCountdown -> beep()),
+//     with no await/setTimeout in front of it, satisfying iOS's requirement
+//     that audio unlock happens inside the user-gesture call stack.
+//  d) N/A: pure Web Audio API (oscillator) output ignores the hardware mute
+//     switch; this only affects HTML5 <audio>/<video> elements.
+//  e) OK: no <audio>/<video> elements are used anywhere in the app, only
+//     Web Audio API OscillatorNode/GainNode — see tone()/sweep() below.
+// Not verified on physical iPhone hardware in this change (no device
+// available in this environment) — please confirm with real-device testing;
+// the [audio]/[vibrate] console.log lines below are there for Safari remote
+// debugging (Mac Safari > Develop > [iPhone] > index.html) if issues remain.
 let audioCtx = null;
 
 function audio() {
@@ -671,13 +706,22 @@ function audio() {
 
 // Sounds are scheduled from setInterval callbacks, not user gestures, so the
 // context can end up 'suspended' (first load, or after the tab/app was
-// backgrounded) — resume it defensively before every scheduled sound.
-function ensureAudioResumed() {
+// backgrounded) — resume it defensively before every scheduled sound, and
+// AWAIT the resume before scheduling any oscillator. iOS Safari (esp. as an
+// installed standalone PWA) re-suspends the AudioContext aggressively after
+// screen lock / inactivity; scheduling a tone while still 'suspended'
+// without waiting for resume() to actually settle is a common source of
+// silently-dropped sounds on iPhone.
+async function ensureAudioResumed() {
     const ctx = audio();
-    if (ctx && ctx.state === 'suspended') {
-        ctx.resume()
-            .then(() => console.log('[audio] resumed ok, state:', ctx.state))
-            .catch(e => console.error('[audio] resume FAILED:', e));
+    if (!ctx) return null;
+    if (ctx.state === 'suspended') {
+        try {
+            await ctx.resume();
+            console.log('[audio] resumed ok, state:', ctx.state);
+        } catch (e) {
+            console.error('[audio] resume FAILED:', e);
+        }
     }
     return ctx;
 }
@@ -729,15 +773,17 @@ function sweep(f0, f1, when, dur, vol, label) {
     }
 }
 
-function beep() {
-    ensureAudioResumed();
-    tone(880, audio().currentTime, 0.08, 0.28, 'countdown-beep');
+async function beep() {
+    const ctx = await ensureAudioResumed();
+    if (!ctx) return;
+    tone(880, ctx.currentTime, 0.08, 0.28, 'countdown-beep');
     vibrate(50);
 }
 
-function phaseSound(type) {
-    ensureAudioResumed();
-    const t = audio().currentTime;
+async function phaseSound(type) {
+    const ctx = await ensureAudioResumed();
+    if (!ctx) return;
+    const t = ctx.currentTime;
     switch (type) {
         case 'warmup':
             sweep(440, 660, t, 0.4, 0.25, 'warmup-start');
@@ -788,7 +834,12 @@ function buildSeq(s) {
     for (let c = 1; c <= s.cycles; c++) {
         for (let set = 1; set <= s.setsPerCycle; set++) {
             seq.push({ type: 'exercise', duration: s.exerciseTime, set, cycle: c });
-            seq.push({ type: 'pause',    duration: s.pauseTime,    set, cycle: c });
+            // No pause after the very last exercise round of the whole
+            // workout — go straight to cooldown/finish instead.
+            const isLastExercise = set === s.setsPerCycle && c === s.cycles;
+            if (!isLastExercise) {
+                seq.push({ type: 'pause', duration: s.pauseTime, set, cycle: c });
+            }
         }
     }
     seq.push({ type: 'cooldown', duration: s.cooldownTime, set: null, cycle: null });
@@ -1187,12 +1238,54 @@ function saveSettings() {
 }
 
 // ==================== FINISH SCREEN ====================
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+function icsTimestamp(date) {
+    return date.getUTCFullYear() +
+        pad2(date.getUTCMonth() + 1) +
+        pad2(date.getUTCDate()) + 'T' +
+        pad2(date.getUTCHours()) +
+        pad2(date.getUTCMinutes()) +
+        pad2(date.getUTCSeconds()) + 'Z';
+}
+
+// Planned duration (from settings), not real elapsed time — matches
+// lastWorkoutDurationSec captured in showFinish().
+function downloadWorkoutICS() {
+    const end = new Date();
+    const start = new Date(end.getTime() - lastWorkoutDurationSec * 1000);
+    const ics = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Tabata Timer//DE',
+        'BEGIN:VEVENT',
+        `UID:${Date.now()}@tabata-timer`,
+        `DTSTAMP:${icsTimestamp(new Date())}`,
+        `DTSTART:${icsTimestamp(start)}`,
+        `DTEND:${icsTimestamp(end)}`,
+        'SUMMARY:TABATA Workout',
+        'END:VEVENT',
+        'END:VCALENDAR',
+        '',
+    ].join('\r\n');
+
+    const blob = new Blob([ics], { type: 'text/calendar' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tabata-workout.ics';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function showFinish() {
     verifyRingIntegrity('showFinish');
     const totalSets = settings.setsPerCycle * settings.cycles;
-    const totalSec = buildSeq(settings).reduce((s, p) => s + p.duration, 0);
+    lastWorkoutDurationSec = buildSeq(settings).reduce((s, p) => s + p.duration, 0);
     document.getElementById('finishStats').innerHTML =
-        `Gesamtzeit: ${fmt(totalSec)}<br>${totalSets} Sets &middot; ${settings.cycles} Zyklen`;
+        `Gesamtzeit: ${fmt(lastWorkoutDurationSec)}<br>${totalSets} Sets &middot; ${settings.cycles} Zyklen`;
     document.getElementById('finishScreen').classList.add('active');
 }
 
@@ -1251,6 +1344,7 @@ document.getElementById('endBtn').addEventListener('click', () => {
     hideFinish();
     initTimer();
 });
+document.getElementById('icsBtn').addEventListener('click', downloadWorkoutICS);
 
 // touch-action: manipulation (already set throughout the CSS) plus
 // user-scalable=no in the viewport meta tag are sufficient to disable
