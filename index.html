@@ -474,6 +474,41 @@
             color: #e0b84d;
             font-size: 14px;
         }
+
+        /* ===== UPDATE BANNER ===== */
+        .update-banner {
+            display: none;
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: calc(16px + env(safe-area-inset-bottom));
+            width: calc(100% - 32px);
+            max-width: 398px;
+            z-index: 300;
+            background: #111;
+            border: 1px solid #2a2a2a;
+            border-radius: 14px;
+            padding: 14px 16px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+        .update-banner.active { display: flex; }
+        .update-banner-text { font-size: 13px; color: #ccc; line-height: 1.4; }
+        .update-banner-btn {
+            flex-shrink: 0;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1.5px solid #fff;
+            background: transparent;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .update-banner-btn:active { opacity: 0.5; }
     </style>
 </head>
 <body>
@@ -586,6 +621,12 @@
         <p>Feedback &amp; Bugs an: <a href="mailto:til.sonntag@gmail.com">til.sonntag@gmail.com</a></p>
         <p class="readme-version" id="readmeVersion"></p>
     </div>
+</div>
+
+<!-- ===== UPDATE BANNER ===== -->
+<div class="update-banner" id="updateBanner">
+    <span class="update-banner-text">Update verfügbar – beim nächsten Start aktiv</span>
+    <button class="update-banner-btn" id="updateReloadBtn">Jetzt aktualisieren</button>
 </div>
 
 <script>
@@ -909,9 +950,12 @@ function releaseWakeLock() {
 
 document.addEventListener('visibilitychange', () => {
     console.log(`[visibility] -> ${document.visibilityState} | running=${running} | audioCtxState=${audioCtx ? audioCtx.state : 'none'} | intervalActive=${intervalId !== null}`);
-    if (document.visibilityState === 'visible' && running) {
-        requestWakeLock();
-        ensureAudioResumed();
+    if (document.visibilityState === 'visible') {
+        checkForServiceWorkerUpdate();
+        if (running) {
+            requestWakeLock();
+            ensureAudioResumed();
+        }
     }
 });
 
@@ -1361,12 +1405,86 @@ document.getElementById('icsBtn').addEventListener('click', downloadWorkoutICS);
 // that previously ate legitimate rapid taps on the stepper +/- buttons.
 document.addEventListener('dblclick', e => e.preventDefault());
 
-// ==================== SERVICE WORKER ====================
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
+// ==================== SERVICE WORKER + UPDATE CHECK ====================
+// Actively probes for a newer sw.js on app start and every foreground
+// return, instead of relying only on the browser's own (slow/unreliable,
+// especially on iOS) periodic update check. A found update never reloads
+// the page on its own — it only surfaces the dismissable banner below;
+// the actual reload is always a deliberate user click, so a workout in
+// progress is never interrupted (requirement: no auto-reload mid-workout).
+let swRegistration = null;
+let swReloading = false;
+
+function showUpdateBanner() {
+    document.getElementById('updateBanner').classList.add('active');
+}
+
+function hideUpdateBanner() {
+    document.getElementById('updateBanner').classList.remove('active');
+}
+
+function watchInstallingWorker(worker) {
+    if (!worker) return;
+    worker.addEventListener('statechange', () => {
+        // 'installed' + an existing controller means this is an UPDATE for an
+        // already-running app (as opposed to the very first-ever install).
+        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+            console.log('[sw-update] new version installed, waiting for user confirmation');
+            showUpdateBanner();
+        }
     });
 }
+
+async function checkForServiceWorkerUpdate() {
+    if (!swRegistration) return;
+    try {
+        await swRegistration.update();
+        console.log('[sw-update] active update() check completed');
+        if (swRegistration.waiting && navigator.serviceWorker.controller) {
+            showUpdateBanner();
+        }
+    } catch (e) {
+        // Purely a background check (e.g. offline) — never surface an error.
+        console.log('[sw-update] update check failed (likely offline):', e.message);
+    }
+}
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+        try {
+            swRegistration = await navigator.serviceWorker.register('./sw.js');
+            console.log('[sw] registered, scope:', swRegistration.scope);
+
+            if (swRegistration.waiting && navigator.serviceWorker.controller) {
+                showUpdateBanner();
+            }
+            watchInstallingWorker(swRegistration.installing);
+            swRegistration.addEventListener('updatefound', () => {
+                watchInstallingWorker(swRegistration.installing);
+            });
+
+            checkForServiceWorkerUpdate();
+        } catch (e) {
+            console.error('[sw] registration failed:', e);
+        }
+    });
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        // Only fires once the waiting worker has been told to skipWaiting,
+        // which only happens via the explicit button click below — so this
+        // reload is always a direct consequence of a deliberate user action.
+        if (swReloading) return;
+        swReloading = true;
+        window.location.reload();
+    });
+}
+
+document.getElementById('updateReloadBtn').addEventListener('click', () => {
+    if (swRegistration && swRegistration.waiting) {
+        swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+    hideUpdateBanner();
+});
 
 // ==================== BOOT ====================
 console.log(`[boot] Tabata Timer v${APP_VERSION} (${APP_VERSION_DATE})`);

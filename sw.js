@@ -4,7 +4,7 @@
 // string stays the same, an already-installed PWA keeps serving the old
 // cached index.html forever via the cache-first fetch handler below, no
 // matter what ships. This was very likely masking earlier iOS PWA fixes.
-const CACHE = 'tabata-v5';
+const CACHE = 'tabata-v6';
 const ASSETS = [
     './',
     './index.html',
@@ -17,8 +17,12 @@ self.addEventListener('install', e => {
     e.waitUntil(
         caches.open(CACHE)
             .then(cache => cache.addAll(ASSETS))
-            .then(() => self.skipWaiting())
     );
+    // Deliberately NOT calling self.skipWaiting() here: a newly-installed SW
+    // must stay in the 'waiting' state until the page explicitly confirms
+    // the update (see the 'message' listener below). That's what lets the
+    // page show a non-blocking "update available" banner instead of forcing
+    // an update mid-workout.
 });
 
 self.addEventListener('activate', e => {
@@ -27,6 +31,10 @@ self.addEventListener('activate', e => {
             Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
         ).then(() => self.clients.claim())
     );
+});
+
+self.addEventListener('message', e => {
+    if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('fetch', e => {
