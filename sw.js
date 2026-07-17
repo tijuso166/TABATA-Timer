@@ -4,7 +4,7 @@
 // string stays the same, an already-installed PWA keeps serving the old
 // cached index.html forever via the cache-first fetch handler below, no
 // matter what ships. This was very likely masking earlier iOS PWA fixes.
-const CACHE = 'tabata-v2';
+const CACHE = 'tabata-v5';
 const ASSETS = [
     './',
     './index.html',

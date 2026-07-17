@@ -466,6 +466,14 @@
         .readme-content p { margin-bottom: 16px; }
         .readme-content a { color: #fff; }
         .readme-version { color: #555; font-size: 13px; }
+        .readme-warning {
+            background: #1c1608;
+            border: 1px solid #3d2f0a;
+            border-radius: 10px;
+            padding: 12px 14px;
+            color: #e0b84d;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -574,6 +582,7 @@
         <button class="close-btn" id="readmeCloseBtn" aria-label="Schließen">✕</button>
     </div>
     <div class="readme-content">
+        <p class="readme-warning">⚠️ iPhone: Der Stummmodus muss für Hinweis- und Countdown-Töne ausgeschaltet sein.</p>
         <p>Feedback &amp; Bugs an: <a href="mailto:til.sonntag@gmail.com">til.sonntag@gmail.com</a></p>
         <p class="readme-version" id="readmeVersion"></p>
     </div>
@@ -586,7 +595,7 @@
 //   MINOR (+0.1.0): new features (e.g. favorites, calendar export, countdown)
 //   MAJOR (+1.0.0): breaking changes to the core concept
 // Bump both constants below (date in ISO format) with every shipped change.
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.2.1';
 const APP_VERSION_DATE = '2026-07-17';
 
 // ==================== CONSTANTS ====================
