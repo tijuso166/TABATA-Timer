@@ -515,6 +515,28 @@
             touch-action: manipulation;
         }
         .update-banner-btn:active { opacity: 0.5; }
+
+        .legal-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            padding: 6px 0;
+            font-size: 0.75rem;
+              background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+        }
+        .legal-footer a {
+            color: #888;
+            text-decoration: none;
+            margin: 0 8px;
+        }
+        .legal-footer a:hover {
+            color: #D85A30;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -1499,5 +1521,10 @@ document.getElementById('updateReloadBtn').addEventListener('click', () => {
 console.log(`[boot] Tabata Timer v${APP_VERSION} (${APP_VERSION_DATE})`);
 initTimer();
 </script>
+
+<footer class="legal-footer">
+  <a href="/impressum">Impressum</a>
+  <a href="/datenschutz">Datenschutz</a>
+</footer>
 </body>
 </html>
