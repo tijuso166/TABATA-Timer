@@ -667,8 +667,8 @@
 //   MINOR (+0.1.0): new features (e.g. favorites, calendar export, countdown)
 //   MAJOR (+1.0.0): breaking changes to the core concept
 // Bump both constants below (date in ISO format) with every shipped change.
-const APP_VERSION = '1.2.2';
-const APP_VERSION_DATE = '2026-07-17';
+const APP_VERSION = '1.3.0';
+const APP_VERSION_DATE = '2026-07-22';
 
 // ==================== CONSTANTS ====================
 const RING_R    = 105;
@@ -749,6 +749,13 @@ let started    = false; // has the first real phase begun (i.e. the 3-2-1 countd
 let intervalId = null;
 let preCountdownValue = 0; // >0 while showing the 3-2-1 pre-workout countdown
 let lastWorkoutDurationSec = 0; // planned total duration, captured at finish time, used for the .ics export
+// Date.now() timestamp such that, while running, timeLeft always equals
+// roughly phaseSeq[phaseIdx].duration - (Date.now() - phaseStartedAt) / 1000.
+// Kept in sync at every fresh phase start and every manual resume-from-pause,
+// so that on returning from the background we can compute exactly how much
+// real time passed and fast-forward the state accordingly — see
+// correctTimerForBackgroundTime() below. 0 while idle/paused (unused then).
+let phaseStartedAt = 0;
 
 // ==================== AUDIO ====================
 // iOS Safari standalone-PWA sound/vibration debugging notes (checked against
@@ -979,14 +986,65 @@ function releaseWakeLock() {
     }
 }
 
+// ==================== BACKGROUND TIME CORRECTION ====================
+// The browser reliably pauses setInterval once the screen locks or the app
+// sits backgrounded for a while — that can't be prevented. What we CAN do is
+// recompute, the instant the app becomes visible again, how much real-world
+// time actually passed and fast-forward the whole phase/set/cycle state to
+// match, silently and without playing any of the sounds/vibrations for the
+// phases the user "missed" (they weren't there to hear them) — normal
+// sound/vibration resume from the corrected point onward exactly as usual.
+function syncPhaseStartedAt() {
+    if (phaseIdx >= phaseSeq.length) { phaseStartedAt = 0; return; }
+    phaseStartedAt = Date.now() - (phaseSeq[phaseIdx].duration - timeLeft) * 1000;
+}
+
+function correctTimerForBackgroundTime() {
+    // Only real, already-running workout phases are corrected. Mid
+    // pre-countdown (3-2-1) and manually-paused states are left untouched.
+    if (!running || !started || preCountdownValue > 0 || !phaseStartedAt) return;
+
+    const elapsedReal = (Date.now() - phaseStartedAt) / 1000;
+    if (elapsedReal < 1) return; // negligible drift, nothing to correct
+
+    let idx = phaseIdx;
+    let remaining = timeLeft - elapsedReal;
+    while (remaining <= 0) {
+        idx++;
+        if (idx >= phaseSeq.length) break;
+        remaining += phaseSeq[idx].duration;
+    }
+
+    if (idx >= phaseSeq.length) {
+        console.log(`[background-catchup] ${elapsedReal.toFixed(1)}s elapsed while backgrounded — workout finished in the meantime, showing finish screen silently.`);
+        running = false;
+        clearInterval(intervalId);
+        intervalId = null;
+        releaseWakeLock();
+        phaseIdx = phaseSeq.length;
+        phaseStartedAt = 0;
+        showFinish();
+        return;
+    }
+
+    const skipped = idx - phaseIdx;
+    phaseIdx = idx;
+    timeLeft = Math.max(1, Math.ceil(remaining));
+    syncPhaseStartedAt();
+    console.log(`[background-catchup] ${elapsedReal.toFixed(1)}s elapsed while backgrounded — silently caught up ${skipped} phase(s), now at "${phaseSeq[phaseIdx].type}" with ${timeLeft}s left.`);
+    updateUI();
+    verifyRingIntegrity(`background-catchup: ${phaseSeq[phaseIdx].type}`);
+}
+
 document.addEventListener('visibilitychange', () => {
     console.log(`[visibility] -> ${document.visibilityState} | running=${running} | audioCtxState=${audioCtx ? audioCtx.state : 'none'} | intervalActive=${intervalId !== null}`);
-    if (document.visibilityState === 'visible') {
-        checkForServiceWorkerUpdate();
-        if (running) {
-            requestWakeLock();
-            ensureAudioResumed();
-        }
+    if (document.visibilityState !== 'visible') return;
+    checkForServiceWorkerUpdate();
+    if (!running) return; // paused (or idle/finished) — leave state exactly as-is
+    correctTimerForBackgroundTime();
+    if (running) { // the correction above may itself have ended the workout
+        requestWakeLock();
+        ensureAudioResumed();
     }
 });
 
@@ -1000,6 +1058,7 @@ function initTimer() {
     running   = false;
     started   = false;
     preCountdownValue = 0;
+    phaseStartedAt = 0;
     releaseWakeLock();
     updateUI();
 }
@@ -1011,8 +1070,12 @@ function startTimer() {
         runPreCountdown();
         return;
     }
-    // Resuming after a manual mid-workout pause: no countdown, continue directly.
+    // Resuming after a manual mid-workout pause: no countdown, continue
+    // directly. timeLeft already reflects partial progress into the phase,
+    // so back-date phaseStartedAt to match instead of treating this as a
+    // fresh phase start.
     running = true;
+    syncPhaseStartedAt();
     intervalId = setInterval(tick, 1000);
     requestWakeLock();
     updateUI();
@@ -1041,6 +1104,7 @@ function runPreCountdown() {
 function beginFirstPhase() {
     started = true;
     timeLeft = phaseSeq[phaseIdx].duration;
+    phaseStartedAt = Date.now();
     phaseSound(phaseSeq[phaseIdx].type);
     phaseVibrate(phaseSeq[phaseIdx].type);
     intervalId = setInterval(tick, 1000);
@@ -1086,12 +1150,14 @@ function advance() {
         running = false;
         clearInterval(intervalId);
         intervalId = null;
+        phaseStartedAt = 0;
         releaseWakeLock();
         phaseSound('done');
         showFinish();
         return;
     }
     timeLeft = phaseSeq[phaseIdx].duration;
+    phaseStartedAt = Date.now();
     phaseSound(phaseSeq[phaseIdx].type);
     phaseVibrate(phaseSeq[phaseIdx].type);
     updateUI();
@@ -1445,6 +1511,13 @@ document.addEventListener('dblclick', e => e.preventDefault());
 // progress is never interrupted (requirement: no auto-reload mid-workout).
 let swRegistration = null;
 let swReloading = false;
+// Guards the controllerchange-triggered reload below. Without this, the very
+// FIRST-ever install also fires 'controllerchange' (clients.claim() takes
+// control of a previously-uncontrolled page, which counts as a "change" too)
+// — that would auto-reload every fresh visitor once, with no update banner
+// or user action involved. Only set once the user actually clicks the
+// update button, so the reload really is always a deliberate user action.
+let swUpdateRequested = false;
 
 function showUpdateBanner() {
     document.getElementById('updateBanner').classList.add('active');
@@ -1501,10 +1574,7 @@ if ('serviceWorker' in navigator) {
     });
 
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-        // Only fires once the waiting worker has been told to skipWaiting,
-        // which only happens via the explicit button click below — so this
-        // reload is always a direct consequence of a deliberate user action.
-        if (swReloading) return;
+        if (!swUpdateRequested || swReloading) return;
         swReloading = true;
         window.location.reload();
     });
@@ -1512,6 +1582,7 @@ if ('serviceWorker' in navigator) {
 
 document.getElementById('updateReloadBtn').addEventListener('click', () => {
     if (swRegistration && swRegistration.waiting) {
+        swUpdateRequested = true;
         swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
     }
     hideUpdateBanner();
