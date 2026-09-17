@@ -205,6 +205,8 @@
             padding-bottom: calc(44px + env(safe-area-inset-bottom));
         }
         .overlay.active { display: flex; }
+        #workoutEditorOverlay.active { z-index: 55; }
+        #workoutImportOverlay.active { z-index: 56; }
 
         .overlay-header {
             display: flex;
@@ -281,46 +283,237 @@
             font-variant-numeric: tabular-nums;
         }
 
-        /* ===== FAVORITES ===== */
-        .favorites-section { margin-top: 24px; }
+        /* ===== SAVED WORKOUTS ===== */
+        .workouts-section { margin-top: 24px; }
 
-        .favorites-label {
+        .workouts-label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .workouts-label {
             font-size: 13px;
             color: #666;
             text-transform: uppercase;
             letter-spacing: 0.6px;
-            margin-bottom: 10px;
         }
 
-        .favorites-row {
+        .workouts-list {
             display: flex;
+            flex-direction: column;
             gap: 10px;
         }
 
-        .favorite-slot {
-            flex: 1;
-            min-width: 0;
-            min-height: 72px;
+        .workout-slot {
+            position: relative;
+            display: flex;
+            align-items: center;
+            min-height: 60px;
             border: 1.5px dashed #333;
             border-radius: 12px;
-            background: transparent;
-            color: #fff;
+            padding: 10px 14px;
+        }
+        .workout-slot:not(.empty) { border-style: solid; border-color: #3a3a3a; }
+
+        .workout-slot-main {
+            flex: 1;
+            min-width: 0;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
             gap: 3px;
-            padding: 10px 4px;
+            border: none;
+            background: transparent;
+            color: #fff;
+            text-align: left;
+            cursor: pointer;
+            padding: 4px 0;
+            touch-action: manipulation;
+        }
+        .workout-slot.empty .workout-slot-main {
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+        }
+        .workout-slot-main:active { opacity: 0.6; }
+
+        .workout-plus { font-size: 20px; color: #555; line-height: 1; }
+        .workout-empty-label { font-size: 13px; color: #555; }
+        .workout-name { font-size: 15px; font-weight: 700; color: #fff; }
+        .workout-count { font-size: 11.5px; color: #777; }
+
+        .workout-import-link {
+            flex-shrink: 0;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-size: 12px;
+            text-decoration: underline;
+            cursor: pointer;
+            padding: 8px 0 8px 8px;
+            touch-action: manipulation;
+        }
+        .workout-import-link:active { opacity: 0.5; }
+
+        .workout-edit-btn {
+            flex-shrink: 0;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1.5px solid #3a3a3a;
+            background: transparent;
+            color: #888;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
             touch-action: manipulation;
         }
-        .favorite-slot:not(.empty) { border-style: solid; border-color: #3a3a3a; }
-        .favorite-slot:active { opacity: 0.6; }
+        .workout-edit-btn svg { width: 15px; height: 15px; }
+        .workout-edit-btn:active { opacity: 0.5; }
 
-        .favorite-plus { font-size: 20px; color: #555; line-height: 1; }
-        .favorite-empty-label { font-size: 10px; color: #555; text-align: center; line-height: 1.3; }
-        .favorite-main { font-size: 14px; font-weight: 700; color: #fff; text-align: center; }
-        .favorite-sub { font-size: 9.5px; color: #777; text-align: center; line-height: 1.3; }
+        /* ===== EXERCISE DISPLAY (during training) ===== */
+        .exercise-display {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ddd;
+            text-align: center;
+            padding: 0 8px;
+        }
+
+        /* ===== WORKOUT EDITOR ===== */
+        .workout-name-input {
+            width: 100%;
+            padding: 14px 4px;
+            border: none;
+            border-bottom: 1px solid #1c1c1c;
+            background: transparent;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .workout-name-input::placeholder { color: #555; }
+
+        .exercise-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #1c1c1c;
+        }
+
+        .exercise-num {
+            flex-shrink: 0;
+            width: 26px;
+            font-size: 14px;
+            color: #666;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .exercise-input {
+            flex: 1;
+            min-width: 0;
+            padding: 8px 0;
+            border: none;
+            background: transparent;
+            color: #fff;
+            font-size: 15px;
+        }
+        .exercise-input::placeholder { color: #444; }
+
+        .exercise-del-btn {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .exercise-del-btn:active { opacity: 0.5; }
+
+        .add-exercise-btn {
+            width: 100%;
+            margin-top: 14px;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1.5px dashed #333;
+            background: transparent;
+            color: #888;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .add-exercise-btn:active { opacity: 0.5; }
+
+        .workout-editor-extra {
+            display: flex;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+        .workout-secondary-btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1.5px solid #3a3a3a;
+            background: transparent;
+            color: #ccc;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .workout-secondary-btn:active { opacity: 0.5; }
+        .workout-danger-btn { border-color: #7a2020; color: #ef4444; }
+
+        /* ===== WORKOUT IMPORT ===== */
+        .import-textarea {
+            width: 100%;
+            min-height: 120px;
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1.5px solid #2a2a2a;
+            background: #0a0a0a;
+            color: #fff;
+            font-size: 13px;
+            font-family: ui-monospace, monospace;
+            resize: vertical;
+        }
+        .import-textarea::placeholder { color: #444; }
+
+        .import-file-label {
+            display: block;
+            margin-top: 12px;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1.5px dashed #333;
+            background: transparent;
+            color: #888;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .import-file-label:active { opacity: 0.5; }
+
+        .import-error {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #ef4444;
+            min-height: 16px;
+        }
 
         .save-btn {
             margin-top: 28px;
@@ -571,6 +764,8 @@
         </div>
     </div>
 
+    <div class="exercise-display" id="exerciseDisplay" hidden></div>
+
     <div class="ring-container">
         <svg class="ring-svg" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -613,6 +808,36 @@
     </div>
     <div class="settings-list" id="settingsList"></div>
     <button class="save-btn" id="saveBtn">Speichern</button>
+</div>
+
+<!-- ===== WORKOUT EDITOR OVERLAY ===== -->
+<div class="overlay" id="workoutEditorOverlay">
+    <div class="overlay-header">
+        <div class="overlay-title" id="workoutEditorTitle">Workout</div>
+        <button class="close-btn" id="workoutEditorCloseBtn" aria-label="Schließen">✕</button>
+    </div>
+    <div class="settings-list">
+        <input type="text" class="workout-name-input" id="workoutNameInput" placeholder="Workout">
+        <div id="exerciseList"></div>
+        <button class="add-exercise-btn" id="addExerciseBtn" type="button">+ Übung hinzufügen</button>
+        <div class="workout-editor-extra" id="workoutEditorExtra"></div>
+    </div>
+    <button class="save-btn" id="workoutSaveBtn">Speichern</button>
+</div>
+
+<!-- ===== WORKOUT IMPORT OVERLAY ===== -->
+<div class="overlay" id="workoutImportOverlay">
+    <div class="overlay-header">
+        <div class="overlay-title">Workout importieren</div>
+        <button class="close-btn" id="workoutImportCloseBtn" aria-label="Schließen">✕</button>
+    </div>
+    <div class="settings-list">
+        <textarea class="import-textarea" id="importTextarea" placeholder='{"name":"...","exercises":["..."]}'></textarea>
+        <label class="import-file-label" for="importFileInput">Datei auswählen…</label>
+        <input type="file" id="importFileInput" accept=".json,application/json" hidden>
+        <div class="import-error" id="importError"></div>
+    </div>
+    <button class="save-btn" id="importConfirmBtn">Importieren</button>
 </div>
 
 <!-- ===== FINISH SCREEN ===== -->
@@ -664,11 +889,11 @@
 // ==================== VERSION ====================
 // Semantic versioning (MAJOR.MINOR.PATCH):
 //   PATCH (+0.0.1): bugfixes only (e.g. rendering glitches, sound repairs)
-//   MINOR (+0.1.0): new features (e.g. favorites, calendar export, countdown)
+//   MINOR (+0.1.0): new features (e.g. saved workouts, calendar export, countdown)
 //   MAJOR (+1.0.0): breaking changes to the core concept
 // Bump both constants below (date in ISO format) with every shipped change.
-const APP_VERSION = '1.3.0';
-const APP_VERSION_DATE = '2026-07-22';
+const APP_VERSION = '1.4.0';
+const APP_VERSION_DATE = '2026-09-17';
 
 // ==================== CONSTANTS ====================
 const RING_R    = 105;
@@ -715,30 +940,38 @@ const SETTINGS_CONFIG = [
 let settings = { ...DEFAULTS };
 let tempSettings = { ...DEFAULTS };
 
-// ==================== FAVORITES ====================
-const FAVORITES_KEY = 'tabataFavorites';
-const FAVORITE_FIELDS = ['exerciseTime', 'pauseTime', 'warmupTime', 'cooldownTime', 'setsPerCycle', 'cycles'];
+// ==================== SAVED WORKOUTS ====================
+const WORKOUTS_KEY = 'tabataWorkouts';
+const WORKOUTS_SLOT_COUNT = 5;
 
-function loadFavorites() {
+function loadWorkouts() {
     try {
-        const raw = localStorage.getItem(FAVORITES_KEY);
+        const raw = localStorage.getItem(WORKOUTS_KEY);
         const arr = raw ? JSON.parse(raw) : null;
-        if (Array.isArray(arr) && arr.length === 3) return arr;
+        if (Array.isArray(arr) && arr.length === WORKOUTS_SLOT_COUNT) return arr;
     } catch (e) {
-        console.error('[favorites] failed to load, resetting:', e);
+        console.error('[workouts] failed to load, resetting:', e);
     }
-    return [null, null, null];
+    return new Array(WORKOUTS_SLOT_COUNT).fill(null);
 }
 
-function persistFavorites() {
+function persistWorkouts() {
     try {
-        localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+        localStorage.setItem(WORKOUTS_KEY, JSON.stringify(workouts));
     } catch (e) {
-        console.error('[favorites] failed to save:', e);
+        console.error('[workouts] failed to save:', e);
     }
 }
 
-let favorites = loadFavorites();
+let workouts = loadWorkouts();
+
+// The exercise list of the workout currently loaded for the next/running
+// training, or null when training purely by the numeric settings (unchanged
+// legacy behavior). Set from a saved slot via loadWorkoutIntoSettings(), only
+// committed to `activeWorkout` on Speichern — mirrors the tempSettings/settings
+// split so loading a workout never applies anything until the user confirms.
+let activeWorkout = null;
+let tempActiveWorkout = null;
 
 // ==================== STATE ====================
 let phaseSeq   = [];   // [{type, duration, set, cycle}]
@@ -760,12 +993,17 @@ let phaseStartedAt = 0;
 // ==================== AUDIO ====================
 // iOS Safari standalone-PWA sound/vibration debugging notes (checked against
 // the known iOS Safari quirks a-e):
-//  a) FIXED: ensureAudioResumed() now checks ctx.state === 'suspended' and
-//     AWAITS ctx.resume() before every single sound (beep + phaseSound),
-//     not just once at first launch. iOS re-suspends the AudioContext after
-//     screen lock / backgrounding, so this must run every time.
+//  a) FIXED, then re-fixed: ensureAudioResumed() originally only checked
+//     ctx.state === 'suspended' and awaited ctx.resume() before every sound.
+//     That missed WebKit's 'interrupted' state (backgrounding/screen lock/
+//     calls/Siri), which caused PERMANENT silence after the first
+//     background/foreground cycle until a full reload — see the detailed
+//     note above ensureAudioResumed() for the confirmed root cause. Now
+//     checks `ctx.state !== 'running'`, which covers 'suspended' AND
+//     'interrupted' alike, plus explicit 'closed' recovery.
 //  b) FIXED: exactly one AudioContext instance for the whole app lifetime,
-//     created lazily by audio() and cached in `audioCtx` — never recreated.
+//     created lazily by audio() and cached in `audioCtx` — recreated only
+//     as an explicit recovery path if it ever reaches 'closed'.
 //  c) OK: the very first resume() call happens synchronously inside the
 //     Play-button click handler (startTimer -> runPreCountdown -> beep()),
 //     with no await/setTimeout in front of it, satisfying iOS's requirement
@@ -774,10 +1012,10 @@ let phaseStartedAt = 0;
 //     switch; this only affects HTML5 <audio>/<video> elements.
 //  e) OK: no <audio>/<video> elements are used anywhere in the app, only
 //     Web Audio API OscillatorNode/GainNode — see tone()/sweep() below.
-// Not verified on physical iPhone hardware in this change (no device
-// available in this environment) — please confirm with real-device testing;
-// the [audio]/[vibrate] console.log lines below are there for Safari remote
-// debugging (Mac Safari > Develop > [iPhone] > index.html) if issues remain.
+// The [audio]/[audio-state]/[vibrate] console.log lines throughout this
+// section are for Safari remote debugging (Mac Safari > Develop > [iPhone]
+// > til-sonntag.de) — see the test protocol note above the visibilitychange
+// listener for how to capture them on a real device.
 let audioCtx = null;
 
 function audio() {
@@ -785,6 +1023,12 @@ function audio() {
         try {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             console.log('[audio] AudioContext created, state:', audioCtx.state);
+            // Diagnostic only — lets every real state transition (including
+            // WebKit's 'interrupted', which has no equivalent in the spec's
+            // base state list) be observed live via Safari remote debugging.
+            audioCtx.onstatechange = () => {
+                console.log('[audio-state]', audioCtx.state, Date.now());
+            };
         } catch (e) {
             console.error('[audio] failed to create AudioContext:', e);
         }
@@ -793,22 +1037,47 @@ function audio() {
 }
 
 // Sounds are scheduled from setInterval callbacks, not user gestures, so the
-// context can end up 'suspended' (first load, or after the tab/app was
+// context can end up non-'running' (first load, or after the tab/app was
 // backgrounded) — resume it defensively before every scheduled sound, and
-// AWAIT the resume before scheduling any oscillator. iOS Safari (esp. as an
-// installed standalone PWA) re-suspends the AudioContext aggressively after
-// screen lock / inactivity; scheduling a tone while still 'suspended'
-// without waiting for resume() to actually settle is a common source of
-// silently-dropped sounds on iPhone.
+// AWAIT the resume before scheduling any oscillator.
+//
+// CONFIRMED ROOT CAUSE (2026-08, permanent silence after one background/
+// foreground cycle on installed iOS PWA): this used to only check
+// `ctx.state === 'suspended'`. WebKit's AudioContext has a THIRD state,
+// 'interrupted' (not in the base Web Audio spec), entered when the audio
+// session is interrupted by backgrounding/screen lock/phone calls/Siri/
+// Control Center — which is exactly the reported trigger. Because the old
+// check didn't match 'interrupted', resume() was never called for it, and
+// unlike 'suspended' it does NOT clear itself on its own — so every sound
+// after the first background trip silently no-op'd forever (tone()/sweep()
+// still logged "ok", since they never checked ctx.state either, they just
+// scheduled into a context that was never actually processing audio).
+// Checking `!== 'running'` instead covers 'interrupted' the same way as
+// 'suspended' — resume() is the documented recovery for both, and calling
+// it on an already-running context is a harmless no-op per spec, so this
+// is strictly more correct with no downside for the cases that already
+// worked. 'closed' additionally needs its own recovery: resume() rejects on
+// a closed context and createOscillator() throws afterwards, so the only
+// way back is a brand new AudioContext (WebKit can force-close under memory
+// pressure during long backgrounding).
 async function ensureAudioResumed() {
-    const ctx = audio();
+    let ctx = audio();
     if (!ctx) return null;
-    if (ctx.state === 'suspended') {
+
+    if (ctx.state === 'closed') {
+        console.warn('[audio] AudioContext is closed — recreating a fresh one');
+        audioCtx = null;
+        ctx = audio();
+        if (!ctx) return null;
+    }
+
+    if (ctx.state !== 'running') {
+        const stateBefore = ctx.state;
         try {
             await ctx.resume();
-            console.log('[audio] resumed ok, state:', ctx.state);
+            console.log(`[audio] resume() called (was '${stateBefore}'), now:`, ctx.state);
         } catch (e) {
-            console.error('[audio] resume FAILED:', e);
+            console.error(`[audio] resume FAILED (was '${stateBefore}'):`, e.name, e.message);
         }
     }
     return ctx;
@@ -832,7 +1101,7 @@ function tone(freq, when, dur, vol, label) {
         console.log(`[audio] ${label} ok (freq=${freq}Hz, ctxState=${ctx.state})`);
         return true;
     } catch (e) {
-        console.error(`[audio] ${label} FAILED to start:`, e);
+        console.error(`[audio] ${label} FAILED to start (ctxState=${audioCtx ? audioCtx.state : 'none'}):`, e.name, e.message);
         return false;
     }
 }
@@ -856,7 +1125,7 @@ function sweep(f0, f1, when, dur, vol, label) {
         console.log(`[audio] ${label} ok (sweep ${f0}->${f1}Hz, ctxState=${ctx.state})`);
         return true;
     } catch (e) {
-        console.error(`[audio] ${label} FAILED to start:`, e);
+        console.error(`[audio] ${label} FAILED to start (ctxState=${audioCtx ? audioCtx.state : 'none'}):`, e.name, e.message);
         return false;
     }
 }
@@ -877,11 +1146,11 @@ async function phaseSound(type) {
             sweep(440, 660, t, 0.4, 0.25, 'warmup-start');
             break;
         case 'exercise':
-            tone(1047, t, 0.15, 0.35, 'exercise-start-1');
-            tone(1319, t + 0.17, 0.15, 0.35, 'exercise-start-2');
+            tone(1200, t, 0.15, 0.6, 'exercise-start-1');
+            tone(1200, t + 0.18, 0.15, 0.6, 'exercise-start-2');
             break;
         case 'pause':
-            sweep(659, 523, t, 0.3, 0.3, 'pause-start');
+            tone(700, t, 0.15, 0.6, 'pause-start');
             break;
         case 'cooldown':
             sweep(660, 440, t, 0.4, 0.25, 'cooldown-start');
@@ -1036,7 +1305,12 @@ function correctTimerForBackgroundTime() {
     verifyRingIntegrity(`background-catchup: ${phaseSeq[phaseIdx].type}`);
 }
 
-document.addEventListener('visibilitychange', () => {
+// Test protocol for audio-related regressions here (only reproducible on a
+// real iPhone, not in a desktop/emulator): Mac + iPhone via cable, Safari >
+// Develop > [iPhone name] > til-sonntag.de, start a workout, background the
+// app with the Home button for 15-30s, return to foreground, and watch for
+// [audio-state] / [audio] resume / [visibility] log lines in the console.
+document.addEventListener('visibilitychange', async () => {
     console.log(`[visibility] -> ${document.visibilityState} | running=${running} | audioCtxState=${audioCtx ? audioCtx.state : 'none'} | intervalActive=${intervalId !== null}`);
     if (document.visibilityState !== 'visible') return;
     checkForServiceWorkerUpdate();
@@ -1044,7 +1318,11 @@ document.addEventListener('visibilitychange', () => {
     correctTimerForBackgroundTime();
     if (running) { // the correction above may itself have ended the workout
         requestWakeLock();
-        ensureAudioResumed();
+        // Awaited (previously fire-and-forget): the state-correction/render
+        // above is synchronous and returns immediately, so without this the
+        // handler could return before the AudioContext is actually back to
+        // 'running', racing the very next tick()-triggered beep().
+        await ensureAudioResumed();
     }
 });
 
@@ -1177,6 +1455,34 @@ function updatePauseIcon() {
     pauseBtn.setAttribute('aria-label', running ? 'Pause' : 'Start');
 }
 
+// Shows the name of the exercise the running phase corresponds to, when a
+// workout with an exercise list is loaded (activeWorkout). Relies on an
+// invariant of buildSeq(): a 'pause' phase is never followed by anything but
+// the next 'exercise' phase, and the phase right after 'warmup' is always the
+// first 'exercise' phase — so "next exercise" during warmup/pause is simply
+// phaseSeq[phaseIdx + 1].set. Indexing wraps with modulo so a manually
+// adjusted setsPerCycle (more sets than exercises in the list) still shows a
+// name instead of running out of bounds.
+function updateExerciseDisplay(phase) {
+    const el = document.getElementById('exerciseDisplay');
+    if (!activeWorkout || !activeWorkout.exercises.length || phase.type === 'cooldown') {
+        el.hidden = true;
+        return;
+    }
+    const exercises = activeWorkout.exercises;
+    let label, name;
+    if (phase.type === 'exercise') {
+        label = 'Aktuelle Übung';
+        name = exercises[(phase.set - 1) % exercises.length];
+    } else {
+        label = 'Nächste Übung';
+        const next = phaseSeq[phaseIdx + 1];
+        name = exercises[next ? (next.set - 1) % exercises.length : 0];
+    }
+    el.hidden = false;
+    el.textContent = `${label}: ${name}`;
+}
+
 function updateUI() {
     if (preCountdownValue > 0) {
         // Ring/stats were already rendered correctly by the last real render
@@ -1200,6 +1506,8 @@ function updateUI() {
         inWorkout
             ? `${phase.cycle}/${settings.cycles}`
             : (phase.type === 'warmup' ? `1/${settings.cycles}` : `${settings.cycles}/${settings.cycles}`);
+
+    updateExerciseDisplay(phase);
 
     // Numbers
     document.getElementById('countdownNum').textContent = timeLeft;
@@ -1271,102 +1579,296 @@ function refreshStepperDisplays() {
     });
 }
 
-// ==================== SETTINGS UI: FAVORITES ====================
-function renderFavoriteSlot(slot, fav) {
-    slot.innerHTML = '';
-    if (!fav) {
-        slot.classList.add('empty');
-        const plus = document.createElement('div');
-        plus.className = 'favorite-plus';
-        plus.textContent = '+';
-        const label = document.createElement('div');
-        label.className = 'favorite-empty-label';
-        label.textContent = 'Favorit speichern';
-        slot.append(plus, label);
-    } else {
-        slot.classList.remove('empty');
-        const main = document.createElement('div');
-        main.className = 'favorite-main';
-        main.textContent = `${fav.exerciseTime}s/${fav.pauseTime}s`;
-        const sub = document.createElement('div');
-        sub.className = 'favorite-sub';
-        sub.textContent = `Sets: ${fav.setsPerCycle} / Zyklen: ${fav.cycles}`;
-        slot.append(main, sub);
-    }
+// ==================== SETTINGS UI: SAVED WORKOUTS ====================
+function loadWorkoutIntoSettings(idx) {
+    const wf = workouts[idx];
+    if (!wf) return;
+    tempSettings.setsPerCycle = wf.exercises.length;
+    tempSettings.cycles = 1;
+    tempSettings.exerciseTime = DEFAULTS.exerciseTime;
+    tempSettings.pauseTime = DEFAULTS.pauseTime;
+    tempActiveWorkout = { name: wf.name, exercises: [...wf.exercises] };
+    refreshStepperDisplays();
 }
 
-function buildFavoriteSlot(idx) {
-    const slot = document.createElement('button');
-    slot.className = 'favorite-slot';
-    slot.type = 'button';
-    renderFavoriteSlot(slot, favorites[idx]);
+function buildWorkoutSlotRow(idx) {
+    const wf = workouts[idx];
+    const slot = document.createElement('div');
+    slot.className = 'workout-slot' + (wf ? '' : ' empty');
 
-    let pressTimer = null;
-    let longPressFired = false;
+    if (!wf) {
+        const main = document.createElement('button');
+        main.type = 'button';
+        main.className = 'workout-slot-main';
+        main.innerHTML = '<span class="workout-plus">+</span><span class="workout-empty-label">Workout speichern</span>';
+        main.addEventListener('click', () => openWorkoutEditor(idx));
 
-    const startPress = () => {
-        longPressFired = false;
-        pressTimer = setTimeout(() => {
-            if (favorites[idx]) {
-                longPressFired = true;
-                if (confirm('Favorit überschreiben?')) {
-                    favorites[idx] = null;
-                    persistFavorites();
-                    renderFavoriteSlot(slot, null);
-                }
-            }
-        }, 600);
-    };
-    const cancelPress = () => clearTimeout(pressTimer);
+        const importLink = document.createElement('button');
+        importLink.type = 'button';
+        importLink.className = 'workout-import-link';
+        importLink.textContent = 'Importieren';
+        importLink.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openWorkoutImport(idx);
+        });
 
-    slot.addEventListener('touchstart', startPress, { passive: true });
-    slot.addEventListener('touchend', cancelPress);
-    slot.addEventListener('touchmove', cancelPress);
-    slot.addEventListener('mousedown', startPress);
-    slot.addEventListener('mouseup', cancelPress);
-    slot.addEventListener('mouseleave', cancelPress);
+        slot.append(main, importLink);
+    } else {
+        const main = document.createElement('button');
+        main.type = 'button';
+        main.className = 'workout-slot-main';
+        const name = document.createElement('div');
+        name.className = 'workout-name';
+        name.textContent = wf.name;
+        const count = document.createElement('div');
+        count.className = 'workout-count';
+        count.textContent = `${wf.exercises.length} Übung${wf.exercises.length === 1 ? '' : 'en'}`;
+        main.append(name, count);
+        main.addEventListener('click', () => loadWorkoutIntoSettings(idx));
 
-    slot.addEventListener('click', () => {
-        if (longPressFired) { longPressFired = false; return; }
-        if (!favorites[idx]) {
-            favorites[idx] = FAVORITE_FIELDS.reduce((acc, k) => { acc[k] = tempSettings[k]; return acc; }, {});
-            persistFavorites();
-            renderFavoriteSlot(slot, favorites[idx]);
-        } else {
-            FAVORITE_FIELDS.forEach(k => { tempSettings[k] = favorites[idx][k]; });
-            refreshStepperDisplays();
-        }
-    });
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'workout-edit-btn';
+        editBtn.setAttribute('aria-label', 'Workout bearbeiten');
+        editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>';
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openWorkoutEditor(idx);
+        });
 
+        slot.append(main, editBtn);
+    }
     return slot;
 }
 
-function buildFavoritesSection() {
+function renderWorkoutsListInto(listEl) {
+    listEl.innerHTML = '';
+    for (let i = 0; i < WORKOUTS_SLOT_COUNT; i++) listEl.appendChild(buildWorkoutSlotRow(i));
+}
+
+function refreshWorkoutsListUI() {
+    const list = document.getElementById('workoutsList');
+    if (list) renderWorkoutsListInto(list);
+}
+
+function buildWorkoutsSection() {
     const wrap = document.createElement('div');
-    wrap.className = 'favorites-section';
+    wrap.className = 'workouts-section';
 
+    const labelRow = document.createElement('div');
+    labelRow.className = 'workouts-label-row';
     const label = document.createElement('div');
-    label.className = 'favorites-label';
-    label.textContent = 'Favoriten';
+    label.className = 'workouts-label';
+    label.textContent = 'Gespeicherte Workouts';
+    labelRow.append(label);
 
-    const row = document.createElement('div');
-    row.className = 'favorites-row';
-    for (let i = 0; i < 3; i++) row.appendChild(buildFavoriteSlot(i));
+    const list = document.createElement('div');
+    list.className = 'workouts-list';
+    list.id = 'workoutsList';
+    renderWorkoutsListInto(list);
 
-    wrap.append(label, row);
+    wrap.append(labelRow, list);
     return wrap;
+}
+
+// ==================== WORKOUT EDITOR ====================
+let editorSlotIndex = null;
+let editorHasExisting = false;
+
+function getEditorExerciseValues() {
+    return Array.from(document.querySelectorAll('#exerciseList .exercise-input')).map(inp => inp.value);
+}
+
+function renderExerciseRows(values) {
+    const list = document.getElementById('exerciseList');
+    list.innerHTML = '';
+    values.forEach((val, i) => {
+        const row = document.createElement('div');
+        row.className = 'exercise-row';
+
+        const num = document.createElement('div');
+        num.className = 'exercise-num';
+        num.textContent = (i + 1) + '.';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'exercise-input';
+        input.placeholder = 'Übung';
+        input.value = val;
+
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'exercise-del-btn';
+        del.setAttribute('aria-label', 'Übung entfernen');
+        del.textContent = '×';
+        del.addEventListener('click', () => {
+            const vals = getEditorExerciseValues();
+            vals.splice(i, 1);
+            renderExerciseRows(vals);
+        });
+
+        row.append(num, input, del);
+        list.appendChild(row);
+    });
+}
+
+function renderWorkoutEditorExtra() {
+    const wrap = document.getElementById('workoutEditorExtra');
+    wrap.innerHTML = '';
+    if (!editorHasExisting) return;
+
+    const exportBtn = document.createElement('button');
+    exportBtn.type = 'button';
+    exportBtn.className = 'workout-secondary-btn';
+    exportBtn.textContent = 'Exportieren';
+    exportBtn.addEventListener('click', () => exportWorkout(editorSlotIndex, exportBtn));
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'workout-secondary-btn workout-danger-btn';
+    deleteBtn.textContent = 'Workout löschen';
+    deleteBtn.addEventListener('click', () => {
+        if (!confirm('Workout wirklich löschen?')) return;
+        workouts[editorSlotIndex] = null;
+        persistWorkouts();
+        closeWorkoutEditor();
+        refreshWorkoutsListUI();
+    });
+
+    wrap.append(exportBtn, deleteBtn);
+}
+
+function openWorkoutEditor(idx) {
+    editorSlotIndex = idx;
+    const existing = workouts[idx];
+    editorHasExisting = !!existing;
+
+    document.getElementById('workoutEditorTitle').textContent = existing ? 'Workout bearbeiten' : 'Neues Workout';
+    const nameInput = document.getElementById('workoutNameInput');
+    nameInput.value = existing ? existing.name : '';
+    nameInput.placeholder = `Workout ${idx + 1}`;
+
+    renderExerciseRows(existing ? [...existing.exercises] : ['']);
+    renderWorkoutEditorExtra();
+    document.getElementById('workoutEditorOverlay').classList.add('active');
+}
+
+function closeWorkoutEditor() {
+    document.getElementById('workoutEditorOverlay').classList.remove('active');
+    editorSlotIndex = null;
+}
+
+function saveWorkoutEditor() {
+    const name = document.getElementById('workoutNameInput').value.trim() || `Workout ${editorSlotIndex + 1}`;
+    const exercises = getEditorExerciseValues().map(v => v.trim()).filter(v => v.length > 0);
+    if (exercises.length === 0) {
+        alert('Bitte mindestens eine Übung eintragen.');
+        return;
+    }
+    workouts[editorSlotIndex] = { name, exercises };
+    persistWorkouts();
+    closeWorkoutEditor();
+    refreshWorkoutsListUI();
+}
+
+function slugify(str) {
+    return str
+        .toLowerCase()
+        .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'workout';
+}
+
+function exportWorkout(idx, btnEl) {
+    const wf = workouts[idx];
+    if (!wf) return;
+    const json = JSON.stringify({ name: wf.name, exercises: wf.exercises });
+
+    const flash = (text) => {
+        if (!btnEl) return;
+        btnEl.textContent = text;
+        setTimeout(() => { btnEl.textContent = 'Exportieren'; }, 1200);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(json).then(() => flash('Kopiert!')).catch(() => flash('Kopieren fehlgeschlagen'));
+    } else {
+        flash('Kopieren nicht verfügbar');
+    }
+
+    try {
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `workout-${slugify(wf.name)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+        console.error('[workout-export] download failed:', e);
+    }
+}
+
+// ==================== WORKOUT IMPORT ====================
+let importTargetSlot = null;
+
+function openWorkoutImport(idx) {
+    importTargetSlot = idx;
+    document.getElementById('importTextarea').value = '';
+    document.getElementById('importFileInput').value = '';
+    document.getElementById('importError').textContent = '';
+    document.getElementById('workoutImportOverlay').classList.add('active');
+}
+
+function closeWorkoutImport() {
+    document.getElementById('workoutImportOverlay').classList.remove('active');
+    importTargetSlot = null;
+}
+
+function parseImportedWorkout(raw, slotIdx) {
+    let data;
+    try {
+        data = JSON.parse(raw);
+    } catch (e) {
+        return null;
+    }
+    if (!data || typeof data !== 'object') return null;
+    if (typeof data.name !== 'string') return null;
+    if (!Array.isArray(data.exercises)) return null;
+    const exercises = data.exercises
+        .filter(x => typeof x === 'string')
+        .map(x => x.trim())
+        .filter(x => x.length > 0);
+    if (exercises.length === 0) return null;
+    return { name: data.name.trim() || `Workout ${slotIdx + 1}`, exercises };
+}
+
+function confirmWorkoutImport() {
+    const raw = document.getElementById('importTextarea').value.trim();
+    const parsed = raw ? parseImportedWorkout(raw, importTargetSlot) : null;
+    if (!parsed) {
+        document.getElementById('importError').textContent = 'Ungültiges Workout-Format';
+        return;
+    }
+    workouts[importTargetSlot] = parsed;
+    persistWorkouts();
+    closeWorkoutImport();
+    refreshWorkoutsListUI();
 }
 
 // ==================== SETTINGS UI ====================
 function buildSettingsUI() {
     tempSettings = { ...settings };
+    tempActiveWorkout = activeWorkout ? { name: activeWorkout.name, exercises: [...activeWorkout.exercises] } : null;
     stepperValueEls = {};
     const list = document.getElementById('settingsList');
     list.innerHTML = '';
     SETTINGS_CONFIG.forEach(cfg => {
         list.appendChild(buildStepperRow(cfg));
     });
-    list.appendChild(buildFavoritesSection());
+    list.appendChild(buildWorkoutsSection());
 }
 
 function openSettings() {
@@ -1381,6 +1883,7 @@ function closeSettings() {
 
 function saveSettings() {
     settings = { ...tempSettings };
+    activeWorkout = tempActiveWorkout;
     closeSettings();
     // Only apply the values and return to the (idle, 0%-ring) start screen —
     // the user has to press Play themselves.
@@ -1474,6 +1977,32 @@ document.getElementById('saveBtn').addEventListener('click', saveSettings);
 
 document.getElementById('infoBtn').addEventListener('click', openReadme);
 document.getElementById('readmeCloseBtn').addEventListener('click', closeReadme);
+
+document.getElementById('workoutEditorCloseBtn').addEventListener('click', closeWorkoutEditor);
+document.getElementById('workoutSaveBtn').addEventListener('click', saveWorkoutEditor);
+document.getElementById('addExerciseBtn').addEventListener('click', () => {
+    const vals = getEditorExerciseValues();
+    vals.push('');
+    renderExerciseRows(vals);
+    const inputs = document.querySelectorAll('#exerciseList .exercise-input');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+});
+
+document.getElementById('workoutImportCloseBtn').addEventListener('click', closeWorkoutImport);
+document.getElementById('importConfirmBtn').addEventListener('click', confirmWorkoutImport);
+document.getElementById('importFileInput').addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        document.getElementById('importTextarea').value = String(reader.result || '');
+        document.getElementById('importError').textContent = '';
+    };
+    reader.onerror = () => {
+        document.getElementById('importError').textContent = 'Datei konnte nicht gelesen werden.';
+    };
+    reader.readAsText(file);
+});
 
 document.getElementById('pauseBtn').addEventListener('click', () => {
     if (running) pauseTimer(); else startTimer();
